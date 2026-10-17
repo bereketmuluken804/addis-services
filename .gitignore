@@ -1,0 +1,80 @@
+# Dependencies
+node_modules/
+.pnp.*
+.yarn/
+
+# Environment and secrets (keep only the template)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.crt
+service-account*.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pino-pretty*
+
+# Build output
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Test and coverage output
+coverage/
+.nyc_output/
+.vitest/
+test-results/
+
+# Runtime and temp files
+tmp/
+temp/
+.cache/
+.eslintcache
+*.pid
+*.pid.lock
+*.seed
+.npm/
+
+# Uploads must never touch disk or git (ID documents are sensitive)
+uploads/
+id-docs/
+*.jpg.tmp
+*.png.tmp
+
+# Database dumps and local data
+*.sql.gz
+*.dump
+*.sqlite
+*.sqlite3
+pgdata/
+.neon
+
+# Editors and IDEs
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+.history/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+AGENTS.md 
+spec.md 
+PROMPT.md
