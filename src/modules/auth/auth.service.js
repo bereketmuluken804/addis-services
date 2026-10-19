@@ -278,6 +278,42 @@ export class AuthService {
   }
 
   /**
+   * Admin Login
+   */
+  static async loginAdmin({ email, password }) {
+    const [admin] = await db
+      .select()
+      .from(schema.adminUsers)
+      .where(eq(schema.adminUsers.email, email.toLowerCase().trim()))
+      .limit(1);
+
+    if (!admin) {
+      await dummyPasswordCompare();
+      throw new AppError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
+    }
+
+    const isValid = await comparePassword(password, admin.passwordHash);
+    if (!isValid) {
+      throw new AppError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
+    }
+
+    const tokens = await db.transaction(async (tx) => {
+      return await AuthService.issueTokens(tx, {
+        ownerId: admin.id,
+        role: 'ADMIN',
+      });
+    });
+
+    return {
+      admin: {
+        id: admin.id,
+        email: admin.email,
+      },
+      tokens,
+    };
+  }
+
+  /**
    * Token Refresh with Reuse Detection (Family Revocation)
    */
   static async refreshTokens(rawRefreshToken) {

@@ -4,6 +4,7 @@ import {
   providerRegisterSchema,
   customerRegisterSchema,
   phoneLoginSchema,
+  adminLoginSchema,
 } from './auth.schemas.js';
 import { validate } from '../../middleware/validate.js';
 import { uploadIdDocument } from '../../middleware/upload.js';
@@ -102,6 +103,27 @@ authRouter.post(
       res.status(200).json({
         data: {
           customer: result.customer,
+          accessToken: result.tokens.accessToken,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// 5. Admin Login
+authRouter.post(
+  '/admin/login',
+  loginRateLimiter,
+  validate({ body: adminLoginSchema }),
+  async (req, res, next) => {
+    try {
+      const result = await AuthService.loginAdmin(req.body);
+      setRefreshTokenCookie(res, result.tokens.refreshToken);
+      res.status(200).json({
+        data: {
+          admin: result.admin,
           accessToken: result.tokens.accessToken,
         },
       });
