@@ -11,6 +11,7 @@ import { adminRouter } from './modules/admin/admin.routes.js';
 import { providerRouter } from './modules/provider/provider.routes.js';
 import { publicRouter } from './modules/public/public.routes.js';
 import { leadsRouter } from './modules/leads/leads.routes.js';
+import { customerRouter } from './modules/customer/customer.routes.js';
 
 export const app = express();
 
@@ -56,6 +57,7 @@ app.get('/healthz', async (req, res, next) => {
 
 // API Routers
 app.use('/api', publicRouter);
+app.use('/api', customerRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/provider', providerRouter);
