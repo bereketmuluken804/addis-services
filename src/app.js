@@ -9,6 +9,7 @@ import { errorHandler, AppError } from './middleware/errorHandler.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { adminRouter } from './modules/admin/admin.routes.js';
 import { providerRouter } from './modules/provider/provider.routes.js';
+import { publicRouter } from './modules/public/public.routes.js';
 
 export const app = express();
 
@@ -53,6 +54,7 @@ app.get('/healthz', async (req, res, next) => {
 });
 
 // API Routers
+app.use('/api', publicRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/provider', providerRouter);
