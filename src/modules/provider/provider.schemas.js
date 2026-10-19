@@ -19,3 +19,20 @@ export const updateAvailabilitySchema = z
     isAvailable: z.boolean(),
   })
   .strict();
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z
+      .string()
+      .min(1, 'Current password is required')
+      .refine((val) => Buffer.byteLength(val, 'utf8') <= 72, {
+        message: 'Current password must not exceed 72 bytes',
+      }),
+    newPassword: z
+      .string()
+      .min(8, 'New password must be at least 8 characters')
+      .refine((val) => Buffer.byteLength(val, 'utf8') <= 72, {
+        message: 'New password must not exceed 72 bytes',
+      }),
+  })
+  .strict();

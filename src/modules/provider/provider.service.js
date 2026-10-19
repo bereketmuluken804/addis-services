@@ -1,20 +1,26 @@
 import crypto from 'node:crypto';
-import { eq, and, count } from 'drizzle-orm';
+import { eq, and, count, isNull } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import * as schema from '../../db/schema.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { getStorage } from '../../lib/storage/index.js';
+import { comparePassword, hashPassword } from '../../lib/crypto.js';
+import { AuthService } from '../auth/auth.service.js';
 
 export class ProviderService {
   /**
    * Get provider profile with stats (calls received).
    */
-  static async getProfile(providerId) {
-    const [provider] = await db
-      .select()
-      .from(schema.providers)
-      .where(eq(schema.providers.id, providerId))
-      .limit(1);
+  static async getProfile(providerId, cachedProvider = null) {
+    const provider =
+      cachedProvider ||
+      (
+        await db
+          .select()
+          .from(schema.providers)
+          .where(eq(schema.providers.id, providerId))
+          .limit(1)
+      )[0];
 
     if (!provider) {
       throw new AppError(404, 'NOT_FOUND', 'Provider not found');
@@ -127,14 +133,18 @@ export class ProviderService {
    * Resubmit ID document adhering to spec §7:
    * Allowed iff verificationStatus is REJECTED or PENDING and no document row has status='PENDING'.
    */
-  static async resubmitDocument(providerId, file) {
+  static async resubmitDocument(providerId, file, cachedProvider = null) {
     const storage = getStorage();
 
-    const [provider] = await db
-      .select()
-      .from(schema.providers)
-      .where(eq(schema.providers.id, providerId))
-      .limit(1);
+    const provider =
+      cachedProvider ||
+      (
+        await db
+          .select()
+          .from(schema.providers)
+          .where(eq(schema.providers.id, providerId))
+          .limit(1)
+      )[0];
 
     if (!provider) {
       throw new AppError(404, 'NOT_FOUND', 'Provider not found');
@@ -206,5 +216,65 @@ export class ProviderService {
       await storage.delete(objectKey).catch(() => {});
       throw err;
     }
+  }
+
+  /**
+   * Provider password change (spec §6.4)
+   * 1. Validate current password matches stored hash (or temporary password)
+   * 2. Hash new password
+   * 3. In transaction: update hash, clear mustChangePassword, revoke active refresh tokens, issue fresh tokens
+   */
+  static async changePassword(providerId, { currentPassword, newPassword }) {
+    const [provider] = await db
+      .select()
+      .from(schema.providers)
+      .where(eq(schema.providers.id, providerId))
+      .limit(1);
+
+    if (!provider) {
+      throw new AppError(404, 'NOT_FOUND', 'Provider not found');
+    }
+
+    const isMatch = await comparePassword(currentPassword, provider.passwordHash);
+    if (!isMatch) {
+      throw new AppError(401, 'INVALID_CREDENTIALS', 'Current password is incorrect');
+    }
+
+    const newPasswordHash = await hashPassword(newPassword);
+
+    return await db.transaction(async (tx) => {
+      const now = new Date();
+
+      // 1. Update passwordHash and clear mustChangePassword
+      await tx
+        .update(schema.providers)
+        .set({
+          passwordHash: newPasswordHash,
+          mustChangePassword: false,
+          updatedAt: now,
+        })
+        .where(eq(schema.providers.id, providerId));
+
+      // 2. Revoke all active refresh tokens for this provider
+      await tx
+        .update(schema.refreshTokens)
+        .set({
+          revokedAt: now,
+        })
+        .where(
+          and(
+            eq(schema.refreshTokens.providerId, providerId),
+            isNull(schema.refreshTokens.revokedAt)
+          )
+        );
+
+      // 3. Issue fresh tokens (new family)
+      const tokens = await AuthService.issueTokens(tx, {
+        ownerId: providerId,
+        role: 'PROVIDER',
+      });
+
+      return tokens;
+    });
   }
 }

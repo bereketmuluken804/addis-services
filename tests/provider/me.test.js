@@ -8,11 +8,6 @@ import { getStorage } from '../../src/lib/storage/index.js';
 describe('Provider Me & Resubmission (src/modules/provider/provider.routes.js)', () => {
   const storage = getStorage();
 
-  beforeEach(() => {
-    vi.restoreAllMocks();
-    storage.clear();
-  });
-
   const providerId = 15;
   const providerToken = signAccessToken({ sub: providerId, role: 'PROVIDER' });
 
@@ -29,7 +24,22 @@ describe('Provider Me & Resubmission (src/modules/provider/provider.routes.js)',
     verificationRejectionReason: 'Blurry photo',
     isActive: false,
     isAvailable: false,
+    mustChangePassword: false,
   };
+
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    storage.clear();
+
+    // Default mock for provider row lookup
+    vi.spyOn(db, 'select').mockImplementation(() => ({
+      from: () => ({
+        where: () => ({
+          limit: () => Promise.resolve([validMockProvider]),
+        }),
+      }),
+    }));
+  });
 
   it('GET /api/provider/me returns safe profile and totalCallsReceived without password hash', async () => {
     let call = 0;
