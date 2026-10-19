@@ -6,6 +6,7 @@ import { env } from './config/env.js';
 import { db } from './db/client.js';
 import { httpLogger } from './middleware/logger.js';
 import { errorHandler, AppError } from './middleware/errorHandler.js';
+import { authRouter } from './modules/auth/auth.routes.js';
 
 export const app = express();
 
@@ -48,6 +49,9 @@ app.get('/healthz', async (req, res, next) => {
     next(new AppError(503, 'SERVICE_UNAVAILABLE', 'Database connectivity check failed'));
   }
 });
+
+// API Routers
+app.use('/api/auth', authRouter);
 
 // Fallback 404 handler
 app.use((req, res, next) => {
