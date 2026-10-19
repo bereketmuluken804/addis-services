@@ -550,4 +550,168 @@ export class AdminService {
       return updated;
     });
   }
+
+  /**
+   * List phone change requests (spec §6.6)
+   */
+  static async getPhoneChangeRequests({ page = 1, limit = 20, status = 'PENDING' }) {
+    const offset = (page - 1) * limit;
+
+    const requests = await db
+      .select({
+        id: schema.phoneChangeRequests.id,
+        providerId: schema.phoneChangeRequests.providerId,
+        providerName: schema.providers.fullName,
+        currentPhone: schema.providers.phone,
+        requestedPhone: schema.phoneChangeRequests.newPhone,
+        reason: schema.phoneChangeRequests.reason,
+        status: schema.phoneChangeRequests.status,
+        rejectionReason: schema.phoneChangeRequests.rejectionReason,
+        createdAt: schema.phoneChangeRequests.createdAt,
+        reviewedAt: schema.phoneChangeRequests.reviewedAt,
+      })
+      .from(schema.phoneChangeRequests)
+      .innerJoin(schema.providers, eq(schema.phoneChangeRequests.providerId, schema.providers.id))
+      .where(eq(schema.phoneChangeRequests.status, status))
+      .orderBy(desc(schema.phoneChangeRequests.createdAt), desc(schema.phoneChangeRequests.id))
+      .limit(limit)
+      .offset(offset);
+
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(schema.phoneChangeRequests)
+      .where(eq(schema.phoneChangeRequests.status, status));
+
+    const totalCount = Number(total);
+
+    return {
+      data: requests,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit) || 1,
+      },
+    };
+  }
+
+  /**
+   * Decide phone change request (spec §4.5, §6.6)
+   */
+  static async decidePhoneChangeRequest({ requestId, status, rejectionReason, adminId }) {
+    const [request] = await db
+      .select()
+      .from(schema.phoneChangeRequests)
+      .where(eq(schema.phoneChangeRequests.id, requestId))
+      .limit(1);
+
+    if (!request) {
+      throw new AppError(404, 'NOT_FOUND', 'Phone change request not found');
+    }
+
+    if (request.status !== 'PENDING') {
+      throw new AppError(
+        409,
+        'INVALID_STATE',
+        `Only pending requests can be decided (current: ${request.status})`
+      );
+    }
+
+    const now = new Date();
+
+    if (status === 'APPROVED') {
+      // Re-check uniqueness at approval time
+      const [duplicate] = await db
+        .select({ id: schema.providers.id })
+        .from(schema.providers)
+        .where(eq(schema.providers.phone, request.newPhone))
+        .limit(1);
+
+      if (duplicate) {
+        throw new AppError(
+          409,
+          'DUPLICATE_PHONE',
+          'Phone number is already registered by another provider'
+        );
+      }
+
+      return await db.transaction(async (tx) => {
+        // 1. Update provider's phone
+        await tx
+          .update(schema.providers)
+          .set({
+            phone: request.newPhone,
+            updatedAt: now,
+          })
+          .where(eq(schema.providers.id, request.providerId));
+
+        // 2. Mark request APPROVED
+        const [updatedRequest] = await tx
+          .update(schema.phoneChangeRequests)
+          .set({
+            status: 'APPROVED',
+            reviewedBy: adminId,
+            reviewedAt: now,
+          })
+          .where(eq(schema.phoneChangeRequests.id, requestId))
+          .returning();
+
+        // 3. Revoke all refresh families for this provider
+        await tx
+          .update(schema.refreshTokens)
+          .set({
+            revokedAt: now,
+          })
+          .where(
+            and(
+              eq(schema.refreshTokens.providerId, request.providerId),
+              isNull(schema.refreshTokens.revokedAt)
+            )
+          );
+
+        // 4. Write audit log entry (target is the request ID)
+        await tx.insert(schema.adminAuditLog).values({
+          adminId,
+          action: 'PHONE_CHANGE_APPROVAL',
+          targetType: 'PHONE_CHANGE_REQUEST',
+          targetId: requestId,
+          reason: null,
+          metadata: {
+            providerId: request.providerId,
+            requestedPhone: request.newPhone,
+          },
+        });
+
+        return updatedRequest;
+      });
+    } else {
+      // Rejection
+      return await db.transaction(async (tx) => {
+        const [updatedRequest] = await tx
+          .update(schema.phoneChangeRequests)
+          .set({
+            status: 'REJECTED',
+            rejectionReason,
+            reviewedBy: adminId,
+            reviewedAt: now,
+          })
+          .where(eq(schema.phoneChangeRequests.id, requestId))
+          .returning();
+
+        await tx.insert(schema.adminAuditLog).values({
+          adminId,
+          action: 'PHONE_CHANGE_REJECTION',
+          targetType: 'PHONE_CHANGE_REQUEST',
+          targetId: requestId,
+          reason: rejectionReason,
+          metadata: {
+            providerId: request.providerId,
+            requestedPhone: request.newPhone,
+          },
+        });
+
+        return updatedRequest;
+      });
+    }
+  }
 }

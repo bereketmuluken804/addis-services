@@ -6,6 +6,8 @@ import {
   paginationQuerySchema,
   resetPasswordSchema,
   moderateReviewSchema,
+  adminPhoneChangeQuerySchema,
+  decidePhoneChangeSchema,
 } from './admin.schemas.js';
 import { validate } from '../../middleware/validate.js';
 import { authenticate } from '../../middleware/auth.js';
@@ -145,6 +147,45 @@ adminRouter.patch(
         reviewId,
         status: req.body.status,
         reason: req.body.reason,
+        adminId: req.user.id,
+      });
+      res.status(200).json({ data: updated });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// 8. List Phone Change Requests (spec §6.6)
+adminRouter.get(
+  '/phone-change-requests',
+  validate({ query: adminPhoneChangeQuerySchema }),
+  async (req, res, next) => {
+    try {
+      const result = await AdminService.getPhoneChangeRequests({
+        page: req.query.page,
+        limit: req.query.limit,
+        status: req.query.status,
+      });
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// 9. Decide Phone Change Request (spec §4.5, §6.6)
+adminRouter.patch(
+  '/phone-change-requests/:id',
+  adminMutationsRateLimiter,
+  validate({ body: decidePhoneChangeSchema }),
+  async (req, res, next) => {
+    try {
+      const requestId = Number(req.params.id);
+      const updated = await AdminService.decidePhoneChangeRequest({
+        requestId,
+        status: req.body.status,
+        rejectionReason: req.body.rejectionReason,
         adminId: req.user.id,
       });
       res.status(200).json({ data: updated });
