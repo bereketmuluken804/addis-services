@@ -1,10 +1,11 @@
 import crypto from 'node:crypto';
-import { eq, and, count, isNull } from 'drizzle-orm';
+import { eq, and, count, isNull, desc } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import * as schema from '../../db/schema.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { getStorage } from '../../lib/storage/index.js';
 import { comparePassword, hashPassword } from '../../lib/crypto.js';
+import { normalizePhone } from '../../lib/phone.js';
 import { AuthService } from '../auth/auth.service.js';
 
 export class ProviderService {
@@ -276,5 +277,162 @@ export class ProviderService {
 
       return tokens;
     });
+  }
+
+  /**
+   * Submit phone change request (spec §4.5, §6.4)
+   * 1. Validate password
+   * 2. Normalize newPhone (422 if invalid)
+   * 3. Cannot be identical to current phone
+   * 4. Must not belong to any existing provider (409)
+   * 5. Cannot have another PENDING request (409)
+   */
+  static async createPhoneChangeRequest({
+    providerId,
+    newPhone,
+    currentPassword,
+    reason,
+    cachedProvider = null,
+  }) {
+    const provider =
+      cachedProvider ||
+      (
+        await db
+          .select()
+          .from(schema.providers)
+          .where(eq(schema.providers.id, providerId))
+          .limit(1)
+      )[0];
+
+    if (!provider) {
+      throw new AppError(404, 'NOT_FOUND', 'Provider not found');
+    }
+
+    // 1. Password verification
+    const isPasswordValid = await comparePassword(currentPassword, provider.passwordHash);
+    if (!isPasswordValid) {
+      throw new AppError(401, 'INVALID_CREDENTIALS', 'Current password is incorrect');
+    }
+
+    // 2. Normalize new phone number (throws 422 INVALID_PHONE if malformed)
+    const normalizedPhone = normalizePhone(newPhone);
+
+    // 3. New phone cannot be identical to current phone
+    if (normalizedPhone === provider.phone) {
+      throw new AppError(
+        400,
+        'SAME_PHONE',
+        'New phone number cannot be the same as current phone number'
+      );
+    }
+
+    // 4. Must not already belong to any provider
+    const [existingWithPhone] = await db
+      .select({ id: schema.providers.id })
+      .from(schema.providers)
+      .where(eq(schema.providers.phone, normalizedPhone))
+      .limit(1);
+
+    if (existingWithPhone) {
+      throw new AppError(
+        409,
+        'DUPLICATE_PHONE',
+        'Phone number is already registered by a provider'
+      );
+    }
+
+    // 5. At most one PENDING request per provider
+    const [existingPending] = await db
+      .select({ id: schema.phoneChangeRequests.id })
+      .from(schema.phoneChangeRequests)
+      .where(
+        and(
+          eq(schema.phoneChangeRequests.providerId, providerId),
+          eq(schema.phoneChangeRequests.status, 'PENDING')
+        )
+      )
+      .limit(1);
+
+    if (existingPending) {
+      throw new AppError(
+        409,
+        'PENDING_REQUEST_EXISTS',
+        'A pending phone change request already exists'
+      );
+    }
+
+    try {
+      const [request] = await db
+        .insert(schema.phoneChangeRequests)
+        .values({
+          providerId,
+          newPhone: normalizedPhone,
+          reason: reason || null,
+          status: 'PENDING',
+        })
+        .returning();
+
+      return request;
+    } catch (err) {
+      if (err.code === '23505') {
+        throw new AppError(
+          409,
+          'PENDING_REQUEST_EXISTS',
+          'A pending phone change request already exists'
+        );
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Get latest phone change request for provider (spec §6.4)
+   */
+  static async getCurrentPhoneChangeRequest(providerId) {
+    const [request] = await db
+      .select({
+        id: schema.phoneChangeRequests.id,
+        newPhone: schema.phoneChangeRequests.newPhone,
+        reason: schema.phoneChangeRequests.reason,
+        status: schema.phoneChangeRequests.status,
+        rejectionReason: schema.phoneChangeRequests.rejectionReason,
+        createdAt: schema.phoneChangeRequests.createdAt,
+        reviewedAt: schema.phoneChangeRequests.reviewedAt,
+      })
+      .from(schema.phoneChangeRequests)
+      .where(eq(schema.phoneChangeRequests.providerId, providerId))
+      .orderBy(desc(schema.phoneChangeRequests.createdAt), desc(schema.phoneChangeRequests.id))
+      .limit(1);
+
+    return request || null;
+  }
+
+  /**
+   * Cancel provider's own pending phone change request (spec §6.4)
+   */
+  static async cancelCurrentPhoneChangeRequest(providerId) {
+    const [pendingRequest] = await db
+      .select({ id: schema.phoneChangeRequests.id })
+      .from(schema.phoneChangeRequests)
+      .where(
+        and(
+          eq(schema.phoneChangeRequests.providerId, providerId),
+          eq(schema.phoneChangeRequests.status, 'PENDING')
+        )
+      )
+      .limit(1);
+
+    if (!pendingRequest) {
+      throw new AppError(404, 'NOT_FOUND', 'No pending phone change request found to cancel');
+    }
+
+    await db
+      .update(schema.phoneChangeRequests)
+      .set({
+        status: 'CANCELLED',
+      })
+      .where(eq(schema.phoneChangeRequests.id, pendingRequest.id));
+
+    return { message: 'Phone change request cancelled successfully' };
   }
 }

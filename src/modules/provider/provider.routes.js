@@ -4,6 +4,7 @@ import {
   updateProfileSchema,
   updateAvailabilitySchema,
   changePasswordSchema,
+  createPhoneChangeRequestSchema,
 } from './provider.schemas.js';
 import { validate } from '../../middleware/validate.js';
 import { authenticate } from '../../middleware/auth.js';
@@ -13,6 +14,7 @@ import { enforceMustChangePassword } from '../../middleware/mustChangePassword.j
 import {
   documentUploadRateLimiter,
   passwordChangeRateLimiter,
+  phoneChangeRateLimiter,
 } from '../../middleware/rateLimit.js';
 import { setRefreshTokenCookie } from '../../lib/cookies.js';
 
@@ -93,3 +95,44 @@ providerRouter.patch(
     }
   }
 );
+
+// 6. Submit Phone Change Request (spec §4.5, §6.4)
+providerRouter.post(
+  '/me/phone-change-requests',
+  phoneChangeRateLimiter,
+  validate({ body: createPhoneChangeRequestSchema }),
+  async (req, res, next) => {
+    try {
+      const result = await ProviderService.createPhoneChangeRequest({
+        providerId: req.user.id,
+        newPhone: req.body.newPhone,
+        currentPassword: req.body.currentPassword,
+        reason: req.body.reason,
+        cachedProvider: req.provider,
+      });
+      res.status(201).json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// 7. Get Current Phone Change Request (spec §6.4)
+providerRouter.get('/me/phone-change-requests/current', async (req, res, next) => {
+  try {
+    const result = await ProviderService.getCurrentPhoneChangeRequest(req.user.id);
+    res.status(200).json({ data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 8. Cancel Current Phone Change Request (spec §6.4)
+providerRouter.delete('/me/phone-change-requests/current', async (req, res, next) => {
+  try {
+    const result = await ProviderService.cancelCurrentPhoneChangeRequest(req.user.id);
+    res.status(200).json({ data: result });
+  } catch (err) {
+    next(err);
+  }
+});

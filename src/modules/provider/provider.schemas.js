@@ -36,3 +36,16 @@ export const changePasswordSchema = z
       }),
   })
   .strict();
+
+export const createPhoneChangeRequestSchema = z
+  .object({
+    newPhone: z.string().min(1, 'newPhone is required'),
+    currentPassword: z
+      .string()
+      .min(1, 'Current password is required')
+      .refine((val) => Buffer.byteLength(val, 'utf8') <= 72, {
+        message: 'Current password must not exceed 72 bytes',
+      }),
+    reason: z.string().trim().max(500, 'Reason must not exceed 500 characters').optional(),
+  })
+  .strict();
