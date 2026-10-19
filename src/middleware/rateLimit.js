@@ -1,0 +1,50 @@
+import rateLimit from 'express-rate-limit';
+import { env } from '../config/env.js';
+
+function createRateLimiter({ windowMs, max, keyGenerator }) {
+  return rateLimit({
+    windowMs,
+    max: env.NODE_ENV === 'test' ? 10000 : max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+      if (keyGenerator) return keyGenerator(req);
+      return req.ip;
+    },
+    handler: (req, res) => {
+      res.status(429).json({
+        error: {
+          code: 'TOO_MANY_REQUESTS',
+          message: 'Too many requests, please try again later',
+        },
+      });
+    },
+  });
+}
+
+// 1. Registration rate limiter: 5 / hour per IP
+export const registrationRateLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  keyGenerator: (req) => req.ip,
+});
+
+// 2. Login rate limiter: 5 / 15 min per IP + identifier (phone or email)
+export const loginRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  keyGenerator: (req) => {
+    const identifier = req.body?.phone || req.body?.email || 'unknown';
+    return `${req.ip}_${identifier.toString().toLowerCase().trim()}`;
+  },
+});
+
+// 3. Refresh token rate limiter: 20 / 15 min per IP + token hash
+export const refreshRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  keyGenerator: (req) => {
+    const rawToken = req.cookies?.refreshToken || req.headers['x-refresh-token'] || '';
+    return `${req.ip}_${rawToken.slice(0, 16)}`;
+  },
+});
