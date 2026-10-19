@@ -48,3 +48,11 @@ export const refreshRateLimiter = createRateLimiter({
     return `${req.ip}_${rawToken.slice(0, 16)}`;
   },
 });
+
+// 4. Call-click rate limiter: 30 / min per IP (spec §5)
+export const callClickRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 30,
+  keyGenerator: (req) => req.ip,
+});
+

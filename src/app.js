@@ -10,6 +10,7 @@ import { authRouter } from './modules/auth/auth.routes.js';
 import { adminRouter } from './modules/admin/admin.routes.js';
 import { providerRouter } from './modules/provider/provider.routes.js';
 import { publicRouter } from './modules/public/public.routes.js';
+import { leadsRouter } from './modules/leads/leads.routes.js';
 
 export const app = express();
 
@@ -58,6 +59,7 @@ app.use('/api', publicRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/provider', providerRouter);
+app.use('/api/leads', leadsRouter);
 
 // Fallback 404 handler
 app.use((req, res, next) => {
