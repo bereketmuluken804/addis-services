@@ -1,9 +1,10 @@
-import { eq, desc, sql, count } from 'drizzle-orm';
+import { eq, desc, sql, count, and, isNull } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import * as schema from '../../db/schema.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { getStorage } from '../../lib/storage/index.js';
 import { env } from '../../config/env.js';
+import { generateTemporaryPassword, hashPassword } from '../../lib/crypto.js';
 
 export class AdminService {
   /**
@@ -433,5 +434,74 @@ export class AdminService {
       },
       totalCallClicks: Number(callClicks.totalClicks),
     };
+  }
+
+  /**
+   * Admin-assisted provider password reset (spec §4.4)
+   * 1. Check provider exists (else 404)
+   * 2. Generate temporary password (>= 12 chars, crypto-based)
+   * 3. Hash temporary password with bcrypt
+   * 4. In a transaction:
+   *    - Set provider passwordHash = hash, mustChangePassword = true, updatedAt = now
+   *    - Revoke all active refresh tokens for this provider
+   *    - Insert admin_audit_log entry (action: 'PROVIDER_PASSWORD_RESET', NEVER putting password in audit log or metadata!)
+   * 5. Return temporary password ONCE to admin
+   */
+  static async resetProviderPassword({ providerId, reason, adminId }) {
+    const [provider] = await db
+      .select({
+        id: schema.providers.id,
+      })
+      .from(schema.providers)
+      .where(eq(schema.providers.id, providerId))
+      .limit(1);
+
+    if (!provider) {
+      throw new AppError(404, 'NOT_FOUND', 'Provider not found');
+    }
+
+    const temporaryPassword = generateTemporaryPassword();
+    const temporaryPasswordHash = await hashPassword(temporaryPassword);
+
+    await db.transaction(async (tx) => {
+      const now = new Date();
+
+      // 1. Update provider with temporary password and mustChangePassword = true
+      await tx
+        .update(schema.providers)
+        .set({
+          passwordHash: temporaryPasswordHash,
+          mustChangePassword: true,
+          updatedAt: now,
+        })
+        .where(eq(schema.providers.id, providerId));
+
+      // 2. Revoke all active refresh tokens for the provider
+      await tx
+        .update(schema.refreshTokens)
+        .set({
+          revokedAt: now,
+        })
+        .where(
+          and(
+            eq(schema.refreshTokens.providerId, providerId),
+            isNull(schema.refreshTokens.revokedAt)
+          )
+        );
+
+      // 3. Write audit log entry (NEVER log or store temporary password)
+      await tx.insert(schema.adminAuditLog).values({
+        adminId,
+        action: 'PROVIDER_PASSWORD_RESET',
+        targetType: 'PROVIDER',
+        targetId: providerId,
+        reason: reason || null,
+        metadata: {
+          providerId,
+        },
+      });
+    });
+
+    return { temporaryPassword };
   }
 }

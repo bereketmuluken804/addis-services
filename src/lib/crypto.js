@@ -23,3 +23,9 @@ export function computeIpHmac(ip) {
     .update(ip)
     .digest('hex');
 }
+
+export function generateTemporaryPassword() {
+  // Spec §4.4: random temporary password (>= 12 chars, crypto-based)
+  // 12 random bytes in base64url produce 16 URL-safe characters
+  return crypto.randomBytes(12).toString('base64url');
+}

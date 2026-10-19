@@ -34,3 +34,9 @@ export const paginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
+
+export const resetPasswordSchema = z
+  .object({
+    reason: z.string().trim().min(3, 'Reason must be at least 3 characters').optional(),
+  })
+  .strict();

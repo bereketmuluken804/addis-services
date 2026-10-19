@@ -4,10 +4,12 @@ import {
   verificationTransitionSchema,
   activationSchema,
   paginationQuerySchema,
+  resetPasswordSchema,
 } from './admin.schemas.js';
 import { validate } from '../../middleware/validate.js';
 import { authenticate } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/requireRole.js';
+import { adminMutationsRateLimiter } from '../../middleware/rateLimit.js';
 
 export const adminRouter = Router();
 
@@ -109,3 +111,23 @@ adminRouter.get('/stats', async (req, res, next) => {
     next(err);
   }
 });
+
+// 6. Admin-assisted Provider Password Reset (spec §4.4)
+adminRouter.post(
+  '/providers/:id/reset-password',
+  adminMutationsRateLimiter,
+  validate({ body: resetPasswordSchema }),
+  async (req, res, next) => {
+    try {
+      const providerId = Number(req.params.id);
+      const result = await AdminService.resetProviderPassword({
+        providerId,
+        reason: req.body?.reason,
+        adminId: req.user.id,
+      });
+      res.status(200).json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
