@@ -13,6 +13,7 @@ import {
   loginRateLimiter,
   refreshRateLimiter,
 } from '../../middleware/rateLimit.js';
+import { csrfProtection } from '../../middleware/csrf.js';
 import {
   parseCookies,
   setRefreshTokenCookie,
@@ -134,7 +135,7 @@ authRouter.post(
 );
 
 // 5. Token Refresh
-authRouter.post('/refresh', refreshRateLimiter, async (req, res, next) => {
+authRouter.post('/refresh', csrfProtection, refreshRateLimiter, async (req, res, next) => {
   try {
     const rawRefreshToken = getRefreshToken(req);
     const result = await AuthService.refreshTokens(rawRefreshToken);
@@ -150,7 +151,7 @@ authRouter.post('/refresh', refreshRateLimiter, async (req, res, next) => {
 });
 
 // 6. Logout
-authRouter.post('/logout', async (req, res, next) => {
+authRouter.post('/logout', csrfProtection, async (req, res, next) => {
   try {
     const rawRefreshToken = getRefreshToken(req);
     await AuthService.logout(rawRefreshToken);
