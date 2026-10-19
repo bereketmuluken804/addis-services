@@ -7,6 +7,8 @@ import { db } from './db/client.js';
 import { httpLogger } from './middleware/logger.js';
 import { errorHandler, AppError } from './middleware/errorHandler.js';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { adminRouter } from './modules/admin/admin.routes.js';
+import { providerRouter } from './modules/provider/provider.routes.js';
 
 export const app = express();
 
@@ -52,6 +54,8 @@ app.get('/healthz', async (req, res, next) => {
 
 // API Routers
 app.use('/api/auth', authRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/provider', providerRouter);
 
 // Fallback 404 handler
 app.use((req, res, next) => {
