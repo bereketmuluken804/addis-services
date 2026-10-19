@@ -41,6 +41,7 @@ export const httpLogger = pinoHttp({
         url: req.url,
         query: req.query,
         params: req.params,
+        ip: req.ip || req.raw?.ip || req.remoteAddress,
         remoteAddress: req.remoteAddress,
       };
     },

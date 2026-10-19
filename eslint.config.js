@@ -12,6 +12,9 @@ export default [
         Buffer: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
+        fetch: 'readonly',
+        FormData: 'readonly',
+        Blob: 'readonly',
       },
     },
     rules: {
