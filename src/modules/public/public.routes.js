@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { PublicService } from './public.service.js';
-import { providerDirectoryQuerySchema } from './public.schemas.js';
+import {
+  providerDirectoryQuerySchema,
+  paginationQuerySchema,
+} from './public.schemas.js';
 import { validate } from '../../middleware/validate.js';
 
 export const publicRouter = Router();
@@ -49,3 +52,22 @@ publicRouter.get('/providers/:id', async (req, res, next) => {
     next(err);
   }
 });
+
+// 5. Provider Public Reviews (spec §6.3)
+publicRouter.get(
+  '/providers/:id/reviews',
+  validate({ query: paginationQuerySchema }),
+  async (req, res, next) => {
+    try {
+      const providerId = Number(req.params.id);
+      const result = await PublicService.getProviderReviews({
+        providerId,
+        page: req.query.page,
+        limit: req.query.limit,
+      });
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);

@@ -1,4 +1,4 @@
-import { eq, and, sql, count, asc } from 'drizzle-orm';
+import { eq, and, sql, count, asc, desc } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import * as schema from '../../db/schema.js';
 import { AppError } from '../../middleware/errorHandler.js';
@@ -242,6 +242,69 @@ export class PublicService {
       },
       averageRating: row.reviewStats?.reviewCount > 0 ? Number(row.reviewStats.averageRating.toFixed(1)) : null,
       reviewCount: Number(row.reviewStats?.reviewCount || 0),
+    };
+  }
+
+  /**
+   * Public paginated list of published reviews for an eligible provider (spec §6.3)
+   */
+  static async getProviderReviews({ providerId, page = 1, limit = 20 }) {
+    // 1. Invariant #1: provider must be eligible
+    const [provider] = await db
+      .select({ id: schema.providers.id })
+      .from(schema.providers)
+      .where(and(eq(schema.providers.id, providerId), schema.isPubliclyEligible))
+      .limit(1);
+
+    if (!provider) {
+      throw new AppError(404, 'NOT_FOUND', 'Provider not found or ineligible');
+    }
+
+    const offset = (page - 1) * limit;
+
+    const reviews = await db
+      .select({
+        id: schema.providerReviews.id,
+        rating: schema.providerReviews.rating,
+        comment: schema.providerReviews.comment,
+        createdAt: schema.providerReviews.createdAt,
+        reviewerName: schema.customerUsers.fullName,
+      })
+      .from(schema.providerReviews)
+      .innerJoin(
+        schema.customerUsers,
+        eq(schema.providerReviews.customerId, schema.customerUsers.id)
+      )
+      .where(
+        and(
+          eq(schema.providerReviews.providerId, providerId),
+          eq(schema.providerReviews.status, 'PUBLISHED')
+        )
+      )
+      .orderBy(desc(schema.providerReviews.createdAt), desc(schema.providerReviews.id))
+      .limit(limit)
+      .offset(offset);
+
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(schema.providerReviews)
+      .where(
+        and(
+          eq(schema.providerReviews.providerId, providerId),
+          eq(schema.providerReviews.status, 'PUBLISHED')
+        )
+      );
+
+    const totalCount = Number(total);
+
+    return {
+      data: reviews,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit) || 1,
+      },
     };
   }
 }

@@ -504,4 +504,50 @@ export class AdminService {
 
     return { temporaryPassword };
   }
+
+  /**
+   * Admin review moderation (spec §6.6)
+   * Sets HIDDEN/PUBLISHED with reason; never edits author rating or text.
+   * Runs in transaction with audit log entry.
+   */
+  static async moderateReview({ reviewId, status, reason, adminId }) {
+    return await db.transaction(async (tx) => {
+      const [review] = await tx
+        .select()
+        .from(schema.providerReviews)
+        .where(eq(schema.providerReviews.id, reviewId))
+        .limit(1);
+
+      if (!review) {
+        throw new AppError(404, 'NOT_FOUND', 'Review not found');
+      }
+
+      const now = new Date();
+      const [updated] = await tx
+        .update(schema.providerReviews)
+        .set({
+          status,
+          moderatedBy: adminId,
+          moderatedAt: now,
+          moderationReason: reason,
+          updatedAt: now,
+        })
+        .where(eq(schema.providerReviews.id, reviewId))
+        .returning();
+
+      await tx.insert(schema.adminAuditLog).values({
+        adminId,
+        action: 'REVIEW_MODERATION',
+        targetType: 'REVIEW',
+        targetId: reviewId,
+        reason,
+        metadata: {
+          previousStatus: review.status,
+          newStatus: status,
+        },
+      });
+
+      return updated;
+    });
+  }
 }

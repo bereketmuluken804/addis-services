@@ -5,6 +5,7 @@ import {
   activationSchema,
   paginationQuerySchema,
   resetPasswordSchema,
+  moderateReviewSchema,
 } from './admin.schemas.js';
 import { validate } from '../../middleware/validate.js';
 import { authenticate } from '../../middleware/auth.js';
@@ -126,6 +127,27 @@ adminRouter.post(
         adminId: req.user.id,
       });
       res.status(200).json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// 7. Moderate Review (spec §6.6)
+adminRouter.patch(
+  '/reviews/:id',
+  adminMutationsRateLimiter,
+  validate({ body: moderateReviewSchema }),
+  async (req, res, next) => {
+    try {
+      const reviewId = Number(req.params.id);
+      const updated = await AdminService.moderateReview({
+        reviewId,
+        status: req.body.status,
+        reason: req.body.reason,
+        adminId: req.user.id,
+      });
+      res.status(200).json({ data: updated });
     } catch (err) {
       next(err);
     }

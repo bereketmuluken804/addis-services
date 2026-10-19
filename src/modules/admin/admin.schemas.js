@@ -40,3 +40,10 @@ export const resetPasswordSchema = z
     reason: z.string().trim().min(3, 'Reason must be at least 3 characters').optional(),
   })
   .strict();
+
+export const moderateReviewSchema = z
+  .object({
+    status: z.enum(['HIDDEN', 'PUBLISHED']),
+    reason: z.string().trim().min(3, 'Reason must be at least 3 characters'),
+  })
+  .strict();
