@@ -7,6 +7,11 @@ import { HomePage } from '@/pages/public/HomePage';
 import { DirectoryPage } from '@/pages/public/DirectoryPage';
 import { ServicesPage } from '@/pages/public/ServicesPage';
 import { ProviderDetailPage } from '@/pages/public/ProviderDetailPage';
+import { ProviderRegisterPage } from '@/pages/provider/ProviderRegisterPage';
+import { ProviderLoginPage } from '@/pages/provider/ProviderLoginPage';
+import { ProviderDashboardPage } from '@/pages/provider/ProviderDashboardPage';
+import { ProviderProfilePage } from '@/pages/provider/ProviderProfilePage';
+import { ProviderSecurityPage } from '@/pages/provider/ProviderSecurityPage';
 import { CallLeadModal } from '@/components/public/CallLeadModal';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/button';
@@ -62,10 +67,20 @@ export default function App() {
           <Navbar />
           <div className="flex-1">
             <Routes>
+              {/* Public Routes */}
               <Route path="/" element={<HomePage />} />
               <Route path="/providers" element={<DirectoryPage />} />
               <Route path="/providers/:id" element={<ProviderDetailPage />} />
               <Route path="/services" element={<ServicesPage />} />
+
+              {/* Provider Portal Routes */}
+              <Route path="/provider/register" element={<ProviderRegisterPage />} />
+              <Route path="/provider/login" element={<ProviderLoginPage />} />
+              <Route path="/provider/dashboard" element={<ProviderDashboardPage />} />
+              <Route path="/provider/profile" element={<ProviderProfilePage />} />
+              <Route path="/provider/security" element={<ProviderSecurityPage />} />
+
+              {/* 404 Fallback */}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </div>
