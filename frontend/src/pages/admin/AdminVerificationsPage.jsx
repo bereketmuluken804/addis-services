@@ -4,6 +4,7 @@ import {
   usePendingProviders,
   useTransitionVerification,
   useVerificationDocument,
+  useUpdateActivation,
 } from '@/hooks/useAdminPortal';
 import { useCategories } from '@/hooks/useCategories';
 import { useLocations } from '@/hooks/useLocations';
@@ -41,6 +42,7 @@ export function AdminVerificationsPage() {
   const { data: locations = [] } = useLocations();
 
   const transitionMutation = useTransitionVerification();
+  const activationMutation = useUpdateActivation();
 
   // Selected provider for document view or reject modal
   const [inspectingProvider, setInspectingProvider] = useState(null);
@@ -77,6 +79,10 @@ export function AdminVerificationsPage() {
       await transitionMutation.mutateAsync({
         providerId,
         status: 'APPROVED',
+      });
+      await activationMutation.mutateAsync({
+        providerId,
+        isActive: true,
       });
       if (inspectingProvider?.id === providerId) {
         setInspectingProvider(null);
