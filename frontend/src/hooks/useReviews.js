@@ -17,7 +17,7 @@ export function useCreateReview(providerId) {
 
   return useMutation({
     mutationFn: async ({ rating, comment }) => {
-      const res = await api.post('/api/reviews', { providerId, rating, comment });
+      const res = await api.post(`/api/providers/${providerId}/reviews`, { rating, comment });
       return res.data;
     },
     onSuccess: () => {

@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const createReviewSchema = z
   .object({
+    providerId: z.coerce.number().int().positive().optional(),
     rating: z
       .coerce
       .number()

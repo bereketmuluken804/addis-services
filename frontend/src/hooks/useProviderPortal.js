@@ -65,7 +65,7 @@ export function useResubmitDocument() {
 
   return useMutation({
     mutationFn: async (formData) => {
-      const res = await api.post('/api/provider/me/documents', formData);
+      const res = await api.post('/api/provider/me/verification-document', formData);
       return res.data;
     },
     onSuccess: () => {

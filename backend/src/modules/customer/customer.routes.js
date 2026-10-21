@@ -13,14 +13,14 @@ export const customerRouter = Router();
 
 const requireCustomer = [authenticate, requireRole('CUSTOMER')];
 
-// 1. Create Review for Eligible Provider (spec §6.5)
+// 1. Create Review for Eligible Provider (spec §6.5) — supports /providers/:id/reviews and /reviews
 customerRouter.post(
-  '/providers/:id/reviews',
+  ['/providers/:id/reviews', '/reviews'],
   ...requireCustomer,
   validate({ body: createReviewSchema }),
   async (req, res, next) => {
     try {
-      const providerId = Number(req.params.id);
+      const providerId = Number(req.params.id || req.body.providerId);
       const review = await CustomerService.createReview({
         providerId,
         customerId: req.user.id,

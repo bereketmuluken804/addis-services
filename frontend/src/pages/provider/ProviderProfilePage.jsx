@@ -6,7 +6,7 @@ import { useLocations } from '@/hooks/useLocations';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function ProviderProfilePage() {
@@ -29,7 +29,7 @@ export function ProviderProfilePage() {
   useEffect(() => {
     if (provider) {
       setBio(provider.bio || '');
-      setExperienceYears(provider.experienceYears ? String(provider.experienceYears) : '');
+      setExperienceYears(provider.experienceYears !== undefined && provider.experienceYears !== null ? String(provider.experienceYears) : '');
       setSubCityId(provider.subCityId ? String(provider.subCityId) : '');
       setWoreda(provider.woreda || '');
       setAvatarUrl(provider.avatarUrl || '');
@@ -69,14 +69,17 @@ export function ProviderProfilePage() {
     setSaved(false);
 
     try {
-      await updateProfile({
-        bio: bio.trim(),
-        experienceYears: experienceYears ? Number(experienceYears) : null,
-        subCityId: subCityId ? Number(subCityId) : null,
-        woreda: woreda.trim() || null,
-        avatarUrl: avatarUrl.trim() || null,
-        workSamples,
-      });
+      const payload = {};
+      if (bio.trim()) payload.bio = bio.trim();
+      if (experienceYears !== '' && !isNaN(Number(experienceYears))) {
+        payload.experienceYears = Number(experienceYears);
+      }
+      if (subCityId) payload.subCityId = Number(subCityId);
+      if (woreda.trim()) payload.woreda = woreda.trim();
+      if (avatarUrl.trim()) payload.avatarUrl = avatarUrl.trim();
+      if (workSamples && workSamples.length > 0) payload.workSamples = workSamples;
+
+      await updateProfile(payload);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
