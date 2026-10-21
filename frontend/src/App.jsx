@@ -12,6 +12,12 @@ import { ProviderLoginPage } from '@/pages/provider/ProviderLoginPage';
 import { ProviderDashboardPage } from '@/pages/provider/ProviderDashboardPage';
 import { ProviderProfilePage } from '@/pages/provider/ProviderProfilePage';
 import { ProviderSecurityPage } from '@/pages/provider/ProviderSecurityPage';
+import { AdminLoginPage } from '@/pages/admin/AdminLoginPage';
+import { AdminDashboardPage } from '@/pages/admin/AdminDashboardPage';
+import { AdminVerificationsPage } from '@/pages/admin/AdminVerificationsPage';
+import { AdminProvidersPage } from '@/pages/admin/AdminProvidersPage';
+import { AdminPhoneRequestsPage } from '@/pages/admin/AdminPhoneRequestsPage';
+import { AdminReviewsPage } from '@/pages/admin/AdminReviewsPage';
 import { CallLeadModal } from '@/components/public/CallLeadModal';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/button';
@@ -79,6 +85,14 @@ export default function App() {
               <Route path="/provider/dashboard" element={<ProviderDashboardPage />} />
               <Route path="/provider/profile" element={<ProviderProfilePage />} />
               <Route path="/provider/security" element={<ProviderSecurityPage />} />
+
+              {/* Admin Console Routes */}
+              <Route path="/admin/login" element={<AdminLoginPage />} />
+              <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+              <Route path="/admin/verifications" element={<AdminVerificationsPage />} />
+              <Route path="/admin/providers" element={<AdminProvidersPage />} />
+              <Route path="/admin/phone-requests" element={<AdminPhoneRequestsPage />} />
+              <Route path="/admin/reviews" element={<AdminReviewsPage />} />
 
               {/* 404 Fallback */}
               <Route path="*" element={<NotFoundPage />} />
