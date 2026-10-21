@@ -28,7 +28,7 @@ export function CustomerAuthModal({ isOpen, onClose, onSuccess }) {
         onSuccess?.();
         onClose();
       } else {
-        const res = await api.post('/api/auth/register/customer', {
+        const res = await api.post('/api/auth/customer/register', {
           fullName,
           phone,
           password,

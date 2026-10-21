@@ -28,9 +28,9 @@ function getRefreshToken(req) {
   return cookies.refreshToken || req.headers['x-refresh-token'];
 }
 
-// 1. Provider Registration (multipart/form-data)
+// 1. Provider Registration (multipart/form-data) — supports both /provider/register and /register/provider
 authRouter.post(
-  '/provider/register',
+  ['/provider/register', '/register/provider'],
   registrationRateLimiter,
   uploadIdDocument,
   validate({ body: providerRegisterSchema }),
@@ -52,7 +52,7 @@ authRouter.post(
 
 // 2. Provider Login
 authRouter.post(
-  '/provider/login',
+  ['/provider/login', '/login/provider'],
   loginRateLimiter,
   validate({ body: phoneLoginSchema }),
   async (req, res, next) => {
@@ -71,9 +71,9 @@ authRouter.post(
   }
 );
 
-// 3. Customer Registration
+// 3. Customer Registration — supports both /customer/register and /register/customer
 authRouter.post(
-  '/customer/register',
+  ['/customer/register', '/register/customer'],
   registrationRateLimiter,
   validate({ body: customerRegisterSchema }),
   async (req, res, next) => {
@@ -94,7 +94,7 @@ authRouter.post(
 
 // 4. Customer Login
 authRouter.post(
-  '/customer/login',
+  ['/customer/login', '/login/customer'],
   loginRateLimiter,
   validate({ body: phoneLoginSchema }),
   async (req, res, next) => {
@@ -115,7 +115,7 @@ authRouter.post(
 
 // 5. Admin Login
 authRouter.post(
-  '/admin/login',
+  ['/admin/login', '/login/admin'],
   loginRateLimiter,
   validate({ body: adminLoginSchema }),
   async (req, res, next) => {
@@ -134,7 +134,61 @@ authRouter.post(
   }
 );
 
-// 5. Token Refresh
+// 6. Unified Login Fallback (/api/auth/login)
+authRouter.post(
+  '/login',
+  loginRateLimiter,
+  async (req, res, next) => {
+    try {
+      if (req.body.email) {
+        const validated = adminLoginSchema.parse(req.body);
+        const result = await AuthService.loginAdmin(validated);
+        setRefreshTokenCookie(res, result.tokens.refreshToken);
+        return res.status(200).json({
+          data: {
+            admin: result.admin,
+            user: { ...result.admin, role: 'ADMIN' },
+            role: 'ADMIN',
+            accessToken: result.tokens.accessToken,
+          },
+        });
+      }
+
+      const phone = req.body.phone || req.body.identifier;
+      const validated = phoneLoginSchema.parse({ phone, password: req.body.password });
+
+      // Try provider first, then customer
+      try {
+        const result = await AuthService.loginProvider(validated);
+        setRefreshTokenCookie(res, result.tokens.refreshToken);
+        return res.status(200).json({
+          data: {
+            provider: result.provider,
+            user: { ...result.provider, role: 'PROVIDER' },
+            role: 'PROVIDER',
+            accessToken: result.tokens.accessToken,
+          },
+        });
+      } catch (provErr) {
+        if (provErr.status !== 401) throw provErr;
+        const result = await AuthService.loginCustomer(validated);
+        setRefreshTokenCookie(res, result.tokens.refreshToken);
+        return res.status(200).json({
+          data: {
+            customer: result.customer,
+            user: { ...result.customer, role: 'CUSTOMER' },
+            role: 'CUSTOMER',
+            accessToken: result.tokens.accessToken,
+          },
+        });
+      }
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// 7. Token Refresh
 authRouter.post('/refresh', csrfProtection, refreshRateLimiter, async (req, res, next) => {
   try {
     const rawRefreshToken = getRefreshToken(req);
@@ -150,7 +204,7 @@ authRouter.post('/refresh', csrfProtection, refreshRateLimiter, async (req, res,
   }
 });
 
-// 6. Logout
+// 8. Logout
 authRouter.post('/logout', csrfProtection, async (req, res, next) => {
   try {
     const rawRefreshToken = getRefreshToken(req);

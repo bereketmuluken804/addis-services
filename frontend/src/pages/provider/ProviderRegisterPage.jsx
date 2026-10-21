@@ -103,14 +103,14 @@ export function ProviderRegisterPage() {
       formData.append('phone', phone.trim());
       formData.append('password', password);
       formData.append('categoryId', categoryId);
-      formData.append('cityId', '1'); // Addis Ababa
+      formData.append('cityId', locations[0]?.id ? String(locations[0].id) : '1'); // Addis Ababa
       formData.append('subCityId', subCityId);
       if (woreda.trim()) formData.append('woreda', woreda.trim());
       if (experienceYears) formData.append('experienceYears', experienceYears);
       if (bio.trim()) formData.append('bio', bio.trim());
       formData.append('idDocument', idFile);
 
-      await api.post('/api/auth/register/provider', formData);
+      await api.post('/api/auth/provider/register', formData);
       setSuccess(true);
     } catch (err) {
       if (err.code === 'DUPLICATE_PHONE') {
