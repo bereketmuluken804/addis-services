@@ -8,6 +8,14 @@ import {
   moderateReviewSchema,
   adminPhoneChangeQuerySchema,
   decidePhoneChangeSchema,
+  adminProvidersQuerySchema,
+  adminReviewsQuerySchema,
+  createCategorySchema,
+  updateCategorySchema,
+  createCitySchema,
+  updateCitySchema,
+  createSubCitySchema,
+  updateSubCitySchema,
 } from './admin.schemas.js';
 import { validate } from '../../middleware/validate.js';
 import { authenticate } from '../../middleware/auth.js';
@@ -33,7 +41,35 @@ adminRouter.get(
   }
 );
 
-// 2. Get Signed URL for Provider Verification Document
+// 2. Get All Providers (with status, isActive, category, search filters)
+adminRouter.get(
+  '/providers',
+  validate({ query: adminProvidersQuerySchema }),
+  async (req, res, next) => {
+    try {
+      const result = await AdminService.getProviders(req.query);
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// 3. Get Single Provider by ID (admin details)
+adminRouter.get(
+  '/providers/:id',
+  async (req, res, next) => {
+    try {
+      const providerId = Number(req.params.id);
+      const result = await AdminService.getProviderById(providerId);
+      res.status(200).json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// 4. Get Signed URL for Provider Verification Document
 adminRouter.get(
   '/providers/:id/verification-document',
   async (req, res, next) => {
@@ -51,7 +87,7 @@ adminRouter.get(
   }
 );
 
-// 3. Verification Transitions
+// 5. Verification Transitions
 adminRouter.patch(
   '/providers/:id/verification',
   validate({ body: verificationTransitionSchema }),
@@ -78,7 +114,7 @@ adminRouter.patch(
   }
 );
 
-// 4. Activation & Suspension
+// 6. Activation & Suspension
 adminRouter.patch(
   '/providers/:id/activation',
   validate({ body: activationSchema }),
@@ -105,7 +141,7 @@ adminRouter.patch(
   }
 );
 
-// 5. Admin Dashboard Statistics
+// 7. Admin Dashboard Statistics
 adminRouter.get('/stats', async (req, res, next) => {
   try {
     const stats = await AdminService.getStats();
@@ -115,7 +151,7 @@ adminRouter.get('/stats', async (req, res, next) => {
   }
 });
 
-// 6. Admin-assisted Provider Password Reset (spec §4.4)
+// 8. Admin-assisted Provider Password Reset (spec §4.4)
 adminRouter.post(
   '/providers/:id/reset-password',
   adminMutationsRateLimiter,
@@ -135,7 +171,7 @@ adminRouter.post(
   }
 );
 
-// 7. Moderate Review (spec §6.6)
+// 9. Moderate Review (spec §6.6)
 adminRouter.patch(
   '/reviews/:id',
   adminMutationsRateLimiter,
@@ -156,7 +192,21 @@ adminRouter.patch(
   }
 );
 
-// 8. List Phone Change Requests (spec §6.6)
+// 10. List Reviews with Reported Queue (spec §6.6)
+adminRouter.get(
+  '/reviews',
+  validate({ query: adminReviewsQuerySchema }),
+  async (req, res, next) => {
+    try {
+      const result = await AdminService.getReviews(req.query);
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// 11. List Phone Change Requests (spec §6.6)
 adminRouter.get(
   '/phone-change-requests',
   validate({ query: adminPhoneChangeQuerySchema }),
@@ -174,7 +224,7 @@ adminRouter.get(
   }
 );
 
-// 9. Decide Phone Change Request (spec §4.5, §6.6)
+// 12. Decide Phone Change Request (spec §4.5, §6.6)
 adminRouter.patch(
   '/phone-change-requests/:id',
   adminMutationsRateLimiter,
@@ -189,6 +239,117 @@ adminRouter.patch(
         adminId: req.user.id,
       });
       res.status(200).json({ data: updated });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// 13. Reference Data: Categories (spec §6.6)
+adminRouter.post(
+  '/categories',
+  adminMutationsRateLimiter,
+  validate({ body: createCategorySchema }),
+  async (req, res, next) => {
+    try {
+      const result = await AdminService.createCategory({
+        ...req.body,
+        adminId: req.user.id,
+      });
+      res.status(201).json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+adminRouter.patch(
+  '/categories/:id',
+  adminMutationsRateLimiter,
+  validate({ body: updateCategorySchema }),
+  async (req, res, next) => {
+    try {
+      const categoryId = Number(req.params.id);
+      const result = await AdminService.updateCategory({
+        categoryId,
+        data: req.body,
+        adminId: req.user.id,
+      });
+      res.status(200).json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// 14. Reference Data: Cities (spec §6.6)
+adminRouter.post(
+  '/cities',
+  adminMutationsRateLimiter,
+  validate({ body: createCitySchema }),
+  async (req, res, next) => {
+    try {
+      const result = await AdminService.createCity({
+        ...req.body,
+        adminId: req.user.id,
+      });
+      res.status(201).json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+adminRouter.patch(
+  '/cities/:id',
+  adminMutationsRateLimiter,
+  validate({ body: updateCitySchema }),
+  async (req, res, next) => {
+    try {
+      const cityId = Number(req.params.id);
+      const result = await AdminService.updateCity({
+        cityId,
+        data: req.body,
+        adminId: req.user.id,
+      });
+      res.status(200).json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// 15. Reference Data: Sub-Cities (spec §6.6)
+adminRouter.post(
+  '/sub-cities',
+  adminMutationsRateLimiter,
+  validate({ body: createSubCitySchema }),
+  async (req, res, next) => {
+    try {
+      const result = await AdminService.createSubCity({
+        ...req.body,
+        adminId: req.user.id,
+      });
+      res.status(201).json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+adminRouter.patch(
+  '/sub-cities/:id',
+  adminMutationsRateLimiter,
+  validate({ body: updateSubCitySchema }),
+  async (req, res, next) => {
+    try {
+      const subCityId = Number(req.params.id);
+      const result = await AdminService.updateSubCity({
+        subCityId,
+        data: req.body,
+        adminId: req.user.id,
+      });
+      res.status(200).json({ data: result });
     } catch (err) {
       next(err);
     }

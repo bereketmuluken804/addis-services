@@ -1,4 +1,4 @@
-import { eq, desc, sql, count, and, isNull } from 'drizzle-orm';
+import { eq, desc, sql, count, and, isNull, or, ilike } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import * as schema from '../../db/schema.js';
 import { AppError } from '../../middleware/errorHandler.js';
@@ -713,5 +713,489 @@ export class AdminService {
         return updatedRequest;
       });
     }
+  }
+
+  /**
+   * List all providers with admin filters (status, isActive, category, search).
+   */
+  static async getProviders({
+    page = 1,
+    limit = 20,
+    status = 'ALL',
+    isActive = 'ALL',
+    categoryId,
+    search,
+  }) {
+    const offset = (page - 1) * limit;
+    const conditions = [];
+
+    if (status !== 'ALL') {
+      conditions.push(eq(schema.providers.verificationStatus, status));
+    }
+    if (isActive !== 'ALL') {
+      conditions.push(eq(schema.providers.isActive, isActive === 'true'));
+    }
+    if (categoryId) {
+      conditions.push(eq(schema.providers.categoryId, categoryId));
+    }
+    if (search) {
+      conditions.push(
+        or(
+          ilike(schema.providers.fullName, `%${search}%`),
+          ilike(schema.providers.phone, `%${search}%`)
+        )
+      );
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const rows = await db
+      .select({
+        id: schema.providers.id,
+        fullName: schema.providers.fullName,
+        phone: schema.providers.phone,
+        bio: schema.providers.bio,
+        experienceYears: schema.providers.experienceYears,
+        avatarUrl: schema.providers.avatarUrl,
+        workSamples: schema.providers.workSamples,
+        woreda: schema.providers.woreda,
+        mustChangePassword: schema.providers.mustChangePassword,
+        verificationStatus: schema.providers.verificationStatus,
+        verificationRejectionReason: schema.providers.verificationRejectionReason,
+        verificationReviewedAt: schema.providers.verificationReviewedAt,
+        isActive: schema.providers.isActive,
+        activatedAt: schema.providers.activatedAt,
+        suspendedAt: schema.providers.suspendedAt,
+        suspensionReason: schema.providers.suspensionReason,
+        isAvailable: schema.providers.isAvailable,
+        createdAt: schema.providers.createdAt,
+        updatedAt: schema.providers.updatedAt,
+        category: {
+          id: schema.categories.id,
+          nameEn: schema.categories.nameEn,
+          nameAm: schema.categories.nameAm,
+          slug: schema.categories.slug,
+          iconName: schema.categories.iconName,
+        },
+        city: {
+          id: schema.cities.id,
+          nameEn: schema.cities.nameEn,
+          nameAm: schema.cities.nameAm,
+        },
+        subCity: {
+          id: schema.subCities.id,
+          nameEn: schema.subCities.nameEn,
+          nameAm: schema.subCities.nameAm,
+        },
+        reviewStats: {
+          averageRating: sql`COALESCE(AVG(CASE WHEN ${schema.providerReviews.status} = 'PUBLISHED' THEN ${schema.providerReviews.rating} END), 0)::float`,
+          reviewCount: sql`COUNT(CASE WHEN ${schema.providerReviews.status} = 'PUBLISHED' THEN 1 END)::int`,
+        },
+      })
+      .from(schema.providers)
+      .innerJoin(schema.categories, eq(schema.providers.categoryId, schema.categories.id))
+      .innerJoin(schema.cities, eq(schema.providers.cityId, schema.cities.id))
+      .innerJoin(schema.subCities, eq(schema.providers.subCityId, schema.subCities.id))
+      .leftJoin(schema.providerReviews, eq(schema.providers.id, schema.providerReviews.providerId))
+      .where(whereClause)
+      .groupBy(
+        schema.providers.id,
+        schema.categories.id,
+        schema.cities.id,
+        schema.subCities.id
+      )
+      .orderBy(desc(schema.providers.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const [{ totalCount }] = await db
+      .select({ totalCount: count() })
+      .from(schema.providers)
+      .where(whereClause);
+
+    return {
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total: Number(totalCount),
+        totalPages: Math.ceil(Number(totalCount) / limit) || 1,
+      },
+    };
+  }
+
+  /**
+   * Get single provider details for admin (regardless of verification or active status).
+   */
+  static async getProviderById(providerId) {
+    const [row] = await db
+      .select({
+        id: schema.providers.id,
+        fullName: schema.providers.fullName,
+        phone: schema.providers.phone,
+        bio: schema.providers.bio,
+        experienceYears: schema.providers.experienceYears,
+        avatarUrl: schema.providers.avatarUrl,
+        workSamples: schema.providers.workSamples,
+        woreda: schema.providers.woreda,
+        mustChangePassword: schema.providers.mustChangePassword,
+        verificationStatus: schema.providers.verificationStatus,
+        verificationRejectionReason: schema.providers.verificationRejectionReason,
+        verificationReviewedAt: schema.providers.verificationReviewedAt,
+        isActive: schema.providers.isActive,
+        activatedAt: schema.providers.activatedAt,
+        suspendedAt: schema.providers.suspendedAt,
+        suspensionReason: schema.providers.suspensionReason,
+        isAvailable: schema.providers.isAvailable,
+        createdAt: schema.providers.createdAt,
+        updatedAt: schema.providers.updatedAt,
+        category: {
+          id: schema.categories.id,
+          nameEn: schema.categories.nameEn,
+          nameAm: schema.categories.nameAm,
+          slug: schema.categories.slug,
+          iconName: schema.categories.iconName,
+        },
+        city: {
+          id: schema.cities.id,
+          nameEn: schema.cities.nameEn,
+          nameAm: schema.cities.nameAm,
+        },
+        subCity: {
+          id: schema.subCities.id,
+          nameEn: schema.subCities.nameEn,
+          nameAm: schema.subCities.nameAm,
+        },
+        reviewStats: {
+          averageRating: sql`COALESCE(AVG(CASE WHEN ${schema.providerReviews.status} = 'PUBLISHED' THEN ${schema.providerReviews.rating} END), 0)::float`,
+          reviewCount: sql`COUNT(CASE WHEN ${schema.providerReviews.status} = 'PUBLISHED' THEN 1 END)::int`,
+        },
+      })
+      .from(schema.providers)
+      .innerJoin(schema.categories, eq(schema.providers.categoryId, schema.categories.id))
+      .innerJoin(schema.cities, eq(schema.providers.cityId, schema.cities.id))
+      .innerJoin(schema.subCities, eq(schema.providers.subCityId, schema.subCities.id))
+      .leftJoin(schema.providerReviews, eq(schema.providers.id, schema.providerReviews.providerId))
+      .where(eq(schema.providers.id, providerId))
+      .groupBy(
+        schema.providers.id,
+        schema.categories.id,
+        schema.cities.id,
+        schema.subCities.id
+      )
+      .limit(1);
+
+    if (!row) {
+      throw new AppError(404, 'NOT_FOUND', 'Provider not found');
+    }
+
+    return row;
+  }
+
+  /**
+   * List reviews for admin with moderation and report status.
+   */
+  static async getReviews({
+    page = 1,
+    limit = 20,
+    status = 'ALL',
+    reportedOnly = 'false',
+    providerId,
+  }) {
+    const offset = (page - 1) * limit;
+    const conditions = [];
+
+    if (status !== 'ALL') {
+      conditions.push(eq(schema.providerReviews.status, status));
+    }
+    if (providerId) {
+      conditions.push(eq(schema.providerReviews.providerId, providerId));
+    }
+
+    const reportsCountSql = sql`COUNT(DISTINCT ${schema.reviewReports.id})::int`;
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const baseQuery = db
+      .select({
+        id: schema.providerReviews.id,
+        providerId: schema.providerReviews.providerId,
+        providerName: schema.providers.fullName,
+        customerId: schema.providerReviews.customerId,
+        customerName: schema.customerUsers.fullName,
+        rating: schema.providerReviews.rating,
+        comment: schema.providerReviews.comment,
+        status: schema.providerReviews.status,
+        moderatedAt: schema.providerReviews.moderatedAt,
+        moderationReason: schema.providerReviews.moderationReason,
+        createdAt: schema.providerReviews.createdAt,
+        updatedAt: schema.providerReviews.updatedAt,
+        reportCount: reportsCountSql,
+      })
+      .from(schema.providerReviews)
+      .innerJoin(schema.providers, eq(schema.providerReviews.providerId, schema.providers.id))
+      .innerJoin(schema.customerUsers, eq(schema.providerReviews.customerId, schema.customerUsers.id))
+      .leftJoin(schema.reviewReports, eq(schema.providerReviews.id, schema.reviewReports.reviewId))
+      .groupBy(
+        schema.providerReviews.id,
+        schema.providers.id,
+        schema.customerUsers.id
+      );
+
+    if (whereClause) {
+      baseQuery.where(whereClause);
+    }
+
+    if (reportedOnly === 'true') {
+      baseQuery.having(sql`COUNT(${schema.reviewReports.id}) > 0`);
+    }
+
+    const rows = await baseQuery
+      .orderBy(desc(schema.providerReviews.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    let total = 0;
+    if (reportedOnly === 'true') {
+      const allReported = await db
+        .select({ id: schema.providerReviews.id })
+        .from(schema.providerReviews)
+        .innerJoin(schema.reviewReports, eq(schema.providerReviews.id, schema.reviewReports.reviewId))
+        .where(whereClause)
+        .groupBy(schema.providerReviews.id);
+      total = allReported.length;
+    } else {
+      const [{ countValue }] = await db
+        .select({ countValue: count() })
+        .from(schema.providerReviews)
+        .where(whereClause);
+      total = Number(countValue);
+    }
+
+    return {
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit) || 1,
+      },
+    };
+  }
+
+  /**
+   * Reference data: Create Category
+   */
+  static async createCategory({ nameEn, nameAm, slug, iconName, displayOrder, adminId }) {
+    const existing = await db
+      .select({ id: schema.categories.id })
+      .from(schema.categories)
+      .where(eq(schema.categories.slug, slug))
+      .limit(1);
+
+    if (existing.length > 0) {
+      throw new AppError(409, 'DUPLICATE_SLUG', 'Category with this slug already exists');
+    }
+
+    const [created] = await db
+      .insert(schema.categories)
+      .values({
+        nameEn,
+        nameAm,
+        slug,
+        iconName,
+        displayOrder,
+      })
+      .returning();
+
+    await db.insert(schema.adminAuditLog).values({
+      adminId,
+      action: 'CREATE_CATEGORY',
+      targetType: 'CATEGORY',
+      targetId: created.id,
+      reason: null,
+    });
+
+    return created;
+  }
+
+  /**
+   * Reference data: Update Category
+   */
+  static async updateCategory({ categoryId, data, adminId }) {
+    const [existing] = await db
+      .select()
+      .from(schema.categories)
+      .where(eq(schema.categories.id, categoryId))
+      .limit(1);
+
+    if (!existing) {
+      throw new AppError(404, 'NOT_FOUND', 'Category not found');
+    }
+
+    const [updated] = await db
+      .update(schema.categories)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.categories.id, categoryId))
+      .returning();
+
+    await db.insert(schema.adminAuditLog).values({
+      adminId,
+      action: 'UPDATE_CATEGORY',
+      targetType: 'CATEGORY',
+      targetId: categoryId,
+      reason: null,
+    });
+
+    return updated;
+  }
+
+  /**
+   * Reference data: Create City
+   */
+  static async createCity({ nameEn, nameAm, slug, adminId }) {
+    const existing = await db
+      .select({ id: schema.cities.id })
+      .from(schema.cities)
+      .where(eq(schema.cities.slug, slug))
+      .limit(1);
+
+    if (existing.length > 0) {
+      throw new AppError(409, 'DUPLICATE_SLUG', 'City with this slug already exists');
+    }
+
+    const [created] = await db
+      .insert(schema.cities)
+      .values({
+        nameEn,
+        nameAm,
+        slug,
+      })
+      .returning();
+
+    await db.insert(schema.adminAuditLog).values({
+      adminId,
+      action: 'CREATE_CITY',
+      targetType: 'CITY',
+      targetId: created.id,
+      reason: null,
+    });
+
+    return created;
+  }
+
+  /**
+   * Reference data: Update City
+   */
+  static async updateCity({ cityId, data, adminId }) {
+    const [existing] = await db
+      .select()
+      .from(schema.cities)
+      .where(eq(schema.cities.id, cityId))
+      .limit(1);
+
+    if (!existing) {
+      throw new AppError(404, 'NOT_FOUND', 'City not found');
+    }
+
+    const [updated] = await db
+      .update(schema.cities)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.cities.id, cityId))
+      .returning();
+
+    await db.insert(schema.adminAuditLog).values({
+      adminId,
+      action: 'UPDATE_CITY',
+      targetType: 'CITY',
+      targetId: cityId,
+      reason: null,
+    });
+
+    return updated;
+  }
+
+  /**
+   * Reference data: Create Sub-City
+   */
+  static async createSubCity({ cityId, nameEn, nameAm, slug, adminId }) {
+    const [city] = await db
+      .select()
+      .from(schema.cities)
+      .where(eq(schema.cities.id, cityId))
+      .limit(1);
+
+    if (!city) {
+      throw new AppError(404, 'NOT_FOUND', 'Parent city not found');
+    }
+
+    const existing = await db
+      .select({ id: schema.subCities.id })
+      .from(schema.subCities)
+      .where(and(eq(schema.subCities.cityId, cityId), eq(schema.subCities.slug, slug)))
+      .limit(1);
+
+    if (existing.length > 0) {
+      throw new AppError(409, 'DUPLICATE_SLUG', 'Sub-city with this slug already exists in this city');
+    }
+
+    const [created] = await db
+      .insert(schema.subCities)
+      .values({
+        cityId,
+        nameEn,
+        nameAm,
+        slug,
+      })
+      .returning();
+
+    await db.insert(schema.adminAuditLog).values({
+      adminId,
+      action: 'CREATE_SUB_CITY',
+      targetType: 'SUB_CITY',
+      targetId: created.id,
+      reason: null,
+    });
+
+    return created;
+  }
+
+  /**
+   * Reference data: Update Sub-City
+   */
+  static async updateSubCity({ subCityId, data, adminId }) {
+    const [existing] = await db
+      .select()
+      .from(schema.subCities)
+      .where(eq(schema.subCities.id, subCityId))
+      .limit(1);
+
+    if (!existing) {
+      throw new AppError(404, 'NOT_FOUND', 'Sub-city not found');
+    }
+
+    const [updated] = await db
+      .update(schema.subCities)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.subCities.id, subCityId))
+      .returning();
+
+    await db.insert(schema.adminAuditLog).values({
+      adminId,
+      action: 'UPDATE_SUB_CITY',
+      targetType: 'SUB_CITY',
+      targetId: subCityId,
+      reason: null,
+    });
+
+    return updated;
   }
 }

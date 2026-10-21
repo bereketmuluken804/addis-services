@@ -22,6 +22,32 @@ export function usePendingProviders({ page = 1, limit = 10 } = {}) {
   });
 }
 
+export function useAdminProviders({
+  page = 1,
+  limit = 10,
+  status = 'ALL',
+  isActive = 'ALL',
+  categoryId,
+  search,
+} = {}) {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+    status,
+    isActive,
+  });
+  if (categoryId) params.append('categoryId', String(categoryId));
+  if (search) params.append('search', search);
+
+  return useQuery({
+    queryKey: ['admin-providers', { page, limit, status, isActive, categoryId, search }],
+    queryFn: async () => {
+      const res = await api.get(`/api/admin/providers?${params.toString()}`);
+      return res;
+    },
+  });
+}
+
 export function useVerificationDocument(providerId, enabled = false) {
   return useQuery({
     queryKey: ['admin-verification-doc', providerId],
@@ -48,6 +74,7 @@ export function useTransitionVerification() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-pending-providers'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-providers'] });
       queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
       queryClient.invalidateQueries({ queryKey: ['providers'] });
     },
@@ -66,6 +93,7 @@ export function useUpdateActivation() {
       return res.data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-providers'] });
       queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
       queryClient.invalidateQueries({ queryKey: ['providers'] });
       queryClient.invalidateQueries({ queryKey: ['admin-pending-providers'] });
@@ -84,6 +112,30 @@ export function useResetProviderPassword() {
   });
 }
 
+export function useAdminReviews({
+  page = 1,
+  limit = 20,
+  status = 'ALL',
+  reportedOnly = 'false',
+  providerId,
+} = {}) {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+    status,
+    reportedOnly,
+  });
+  if (providerId) params.append('providerId', String(providerId));
+
+  return useQuery({
+    queryKey: ['admin-reviews', { page, limit, status, reportedOnly, providerId }],
+    queryFn: async () => {
+      const res = await api.get(`/api/admin/reviews?${params.toString()}`);
+      return res;
+    },
+  });
+}
+
 export function useModerateReview() {
   const queryClient = useQueryClient();
 
@@ -93,6 +145,7 @@ export function useModerateReview() {
       return res.data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['provider-reviews'] });
     },
   });

@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { useProviders } from '@/hooks/useProviders';
+import { useAdminProviders, useUpdateActivation, useResetProviderPassword } from '@/hooks/useAdminPortal';
 import { useCategories } from '@/hooks/useCategories';
 import { useLocations } from '@/hooks/useLocations';
-import { useUpdateActivation, useResetProviderPassword } from '@/hooks/useAdminPortal';
 import { api } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -30,11 +29,16 @@ import {
   Phone,
   MapPin,
   ExternalLink,
+  Filter,
 } from 'lucide-react';
 
 export function AdminProvidersPage() {
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [selectedIsActive, setSelectedIsActive] = useState('ALL');
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState('');
+  const [activeSearch, setActiveSearch] = useState('');
   const [searchId, setSearchId] = useState('');
   const [searchedProvider, setSearchedProvider] = useState(null);
   const [searchError, setSearchError] = useState('');
@@ -43,8 +47,12 @@ export function AdminProvidersPage() {
   // Queries
   const { data: categories = [] } = useCategories();
   const { data: locations = [] } = useLocations();
-  const { data: directoryData, isLoading: dirLoading } = useProviders({
+
+  const { data: directoryData, isLoading: dirLoading, refetch } = useAdminProviders({
     categoryId: selectedCategory ? Number(selectedCategory) : undefined,
+    status: selectedStatus,
+    isActive: selectedIsActive,
+    search: activeSearch || undefined,
     page,
     limit: 10,
   });
@@ -69,6 +77,13 @@ export function AdminProvidersPage() {
   const providers = directoryData?.data || [];
   const pagination = directoryData?.pagination || { page: 1, totalPages: 1, total: 0 };
 
+  const handleSearchByNameOrPhone = (e) => {
+    e.preventDefault();
+    setActiveSearch(searchInput.trim());
+    setSearchedProvider(null);
+    setPage(1);
+  };
+
   const handleSearchById = async (e) => {
     e.preventDefault();
     if (!searchId.trim()) return;
@@ -78,7 +93,7 @@ export function AdminProvidersPage() {
     setSearchedProvider(null);
 
     try {
-      const res = await api.get(`/api/providers/${searchId.trim()}`);
+      const res = await api.get(`/api/admin/providers/${searchId.trim()}`);
       if (res.data) {
         setSearchedProvider(res.data);
       } else {
@@ -111,16 +126,17 @@ export function AdminProvidersPage() {
         reason: suspensionReason.trim() || undefined,
       });
 
-      // Update local state if currently viewing searched provider
       if (searchedProvider && searchedProvider.id === actionProvider.id) {
         setSearchedProvider({
           ...searchedProvider,
           isActive: activationType === 'activate',
+          suspensionReason: activationType === 'suspend' ? suspensionReason.trim() : null,
         });
       }
 
       setActionProvider(null);
       setActivationType(null);
+      refetch();
     } catch (err) {
       setActionError(err.message || 'Failed to update activation status.');
     }
@@ -142,11 +158,11 @@ export function AdminProvidersPage() {
       setGeneratedPassword(res.temporaryPassword);
       setActionProvider(null);
     } catch (err) {
-      setActionError(err.message || 'Failed to reset provider password.');
+      setActionError(err.message || 'Failed to generate temporary password.');
     }
   };
 
-  const copyToClipboard = (text) => {
+  const handleCopyPassword = (text) => {
     navigator.clipboard.writeText(text);
     setHasCopied(true);
     setTimeout(() => setHasCopied(false), 2000);
@@ -163,46 +179,116 @@ export function AdminProvidersPage() {
             Provider Management
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Activate or suspend provider accounts, review profile details, or issue temporary credentials.
+            Activate or suspend provider accounts, review profiles across all statuses, and issue temporary credentials.
           </p>
         </div>
 
         {/* Search & Filter Bar */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <form onSubmit={handleSearchById} className="md:col-span-2 flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground" />
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            {/* Search by Name or Phone */}
+            <form onSubmit={handleSearchByNameOrPhone} className="md:col-span-2 flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search by Pro Name or Phone (+251...)..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="pl-10 rounded-xl"
+                />
+              </div>
+              <Button type="submit" className="rounded-xl text-xs font-semibold px-4">
+                Search
+              </Button>
+              {activeSearch && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setActiveSearch('');
+                    setSearchInput('');
+                    setPage(1);
+                  }}
+                  className="rounded-xl text-xs"
+                >
+                  Clear
+                </Button>
+              )}
+            </form>
+
+            {/* Quick Lookup by ID */}
+            <form onSubmit={handleSearchById} className="md:col-span-2 flex gap-2">
               <Input
                 type="number"
-                placeholder="Search by Provider ID (e.g. 1, 42)..."
+                placeholder="Lookup by Exact ID (e.g. 1)..."
                 value={searchId}
                 onChange={(e) => setSearchId(e.target.value)}
-                className="pl-10 rounded-xl"
+                className="rounded-xl"
               />
-            </div>
-            <Button
-              type="submit"
-              disabled={searchLoading || !searchId.trim()}
-              className="rounded-xl text-xs font-semibold px-5"
-            >
-              {searchLoading ? 'Looking up...' : 'Lookup'}
-            </Button>
-            {searchedProvider && (
               <Button
-                type="button"
+                type="submit"
+                disabled={searchLoading || !searchId.trim()}
                 variant="outline"
-                onClick={() => {
-                  setSearchedProvider(null);
-                  setSearchId('');
-                }}
-                className="rounded-xl text-xs"
+                className="rounded-xl text-xs font-semibold px-4"
               >
-                Clear Search
+                {searchLoading ? 'Looking up...' : 'Find ID'}
               </Button>
-            )}
-          </form>
+              {searchedProvider && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setSearchedProvider(null);
+                    setSearchId('');
+                  }}
+                  className="rounded-xl text-xs"
+                >
+                  Exit ID View
+                </Button>
+              )}
+            </form>
+          </div>
 
-          <div>
+          {/* Secondary Filters: Verification Status, Activation Status, Category */}
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/70 bg-card p-3 shadow-xs">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 pl-1">
+              <Filter className="h-3.5 w-3.5" /> Filters:
+            </span>
+
+            {/* Verification Status Filter */}
+            <select
+              value={selectedStatus}
+              onChange={(e) => {
+                setSelectedStatus(e.target.value);
+                setSearchedProvider(null);
+                setPage(1);
+              }}
+              className="h-9 rounded-xl border border-input bg-background px-3 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="ALL">All Verification Statuses</option>
+              <option value="APPROVED">Approved</option>
+              <option value="PENDING">Pending Review</option>
+              <option value="REJECTED">Rejected</option>
+              <option value="REVOKED">Revoked</option>
+            </select>
+
+            {/* Activation Status Filter */}
+            <select
+              value={selectedIsActive}
+              onChange={(e) => {
+                setSelectedIsActive(e.target.value);
+                setSearchedProvider(null);
+                setPage(1);
+              }}
+              className="h-9 rounded-xl border border-input bg-background px-3 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="ALL">All Operating States</option>
+              <option value="true">Active Only</option>
+              <option value="false">Inactive / Suspended Only</option>
+            </select>
+
+            {/* Category Filter */}
             <select
               value={selectedCategory}
               onChange={(e) => {
@@ -210,7 +296,7 @@ export function AdminProvidersPage() {
                 setSearchedProvider(null);
                 setPage(1);
               }}
-              className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="h-9 rounded-xl border border-input bg-background px-3 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="">All Categories ({categories.length})</option>
               {categories.map((c) => (
@@ -246,120 +332,158 @@ export function AdminProvidersPage() {
             <Users className="mx-auto h-12 w-12 text-muted-foreground/40 mb-3" />
             <h3 className="font-heading text-lg font-bold text-foreground">No Providers Found</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Try adjusting your category filter or search by another Provider ID.
+              Try adjusting your search criteria, category, or status filters.
             </p>
           </Card>
         ) : (
           <div className="space-y-4">
-            {displayList.map((p) => (
-              <Card
-                key={p.id}
-                className="rounded-2xl border-border/60 p-5 shadow-sm hover:border-primary/40 transition-all bg-white"
-              >
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                  {/* Left: Info */}
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <span className="text-xs font-mono font-bold text-muted-foreground">
-                        #{p.id}
-                      </span>
-                      <h3 className="font-heading text-lg font-bold text-foreground">
-                        {p.fullName}
-                      </h3>
-                      {p.category && (
-                        <Badge variant="secondary" className="text-xs font-semibold bg-primary/10 text-primary">
-                          {p.category.nameEn}
+            {displayList.map((p) => {
+              const isApproved = p.verificationStatus === 'APPROVED';
+              const isPending = p.verificationStatus === 'PENDING';
+              const isRejected = p.verificationStatus === 'REJECTED';
+              const isRevoked = p.verificationStatus === 'REVOKED';
+
+              return (
+                <Card
+                  key={p.id}
+                  className="rounded-2xl border-border/60 p-5 shadow-xs hover:border-primary/40 transition-all bg-card"
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    {/* Left: Info */}
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <span className="text-xs font-mono font-bold text-muted-foreground">
+                          #{p.id}
+                        </span>
+                        <h3 className="font-heading text-lg font-bold text-foreground">
+                          {p.fullName}
+                        </h3>
+                        {p.category && (
+                          <Badge variant="secondary" className="text-xs font-semibold bg-primary/10 text-primary">
+                            {p.category.nameEn}
+                          </Badge>
+                        )}
+
+                        {/* Verification Status Badge */}
+                        <Badge
+                          variant="outline"
+                          className={
+                            isApproved
+                              ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                              : isPending
+                              ? 'border-amber-300 bg-amber-50 text-amber-800'
+                              : isRejected
+                              ? 'border-rose-300 bg-rose-50 text-rose-800'
+                              : 'border-slate-300 bg-slate-100 text-slate-800'
+                          }
+                        >
+                          {p.verificationStatus}
                         </Badge>
-                      )}
-                      <Badge
-                        variant="outline"
-                        className={
-                          p.isActive !== false
-                            ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                            : 'border-rose-300 bg-rose-50 text-rose-800'
-                        }
-                      >
-                        {p.isActive !== false ? 'ACTIVE' : 'SUSPENDED'}
-                      </Badge>
-                      {p.isAvailable ? (
-                        <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500" /> Available
+
+                        {/* Activation Status Badge */}
+                        <Badge
+                          variant="outline"
+                          className={
+                            p.isActive
+                              ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                              : 'border-rose-300 bg-rose-50 text-rose-800'
+                          }
+                        >
+                          {p.isActive ? 'ACTIVE' : 'INACTIVE'}
+                        </Badge>
+
+                        {p.isAvailable ? (
+                          <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500" /> Available
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+                            <span className="h-2 w-2 rounded-full bg-slate-400" /> Busy
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1 font-mono font-medium text-foreground">
+                          <Phone className="h-3 w-3 text-primary" />
+                          {p.phone}
                         </span>
+                        {p.subCity && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3 text-primary" />
+                            {p.subCity.nameEn}
+                            {p.woreda && ` (Woreda ${p.woreda})`}
+                          </span>
+                        )}
+                        <span>{p.experienceYears || 0} yrs experience</span>
+                        <span>
+                          {Number(p.reviewStats?.averageRating || 0).toFixed(1)} ★ ({p.reviewStats?.reviewCount || 0} reviews)
+                        </span>
+                      </div>
+
+                      {p.suspensionReason && !p.isActive && (
+                        <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200/60 rounded-xl px-3 py-1.5 mt-2">
+                          <span className="font-semibold">Suspension Reason:</span> {p.suspensionReason}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right: Administrative Actions */}
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      {isApproved && p.isActive && (
+                        <a
+                          href={`/providers/${p.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex"
+                        >
+                          <Button variant="outline" size="sm" className="rounded-xl text-xs gap-1.5">
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Public Profile
+                          </Button>
+                        </a>
+                      )}
+
+                      {/* Reset Password Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenResetPassword(p)}
+                        className="rounded-xl text-xs font-semibold gap-1.5 border-border/80 text-foreground hover:bg-slate-50"
+                      >
+                        <KeyRound className="h-3.5 w-3.5 text-amber-600" />
+                        Reset Password
+                      </Button>
+
+                      {/* Activation / Suspension Toggle */}
+                      {p.isActive ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenActivation(p, 'suspend')}
+                          className="rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-semibold gap-1.5"
+                        >
+                          <Power className="h-3.5 w-3.5" />
+                          Suspend Listing
+                        </Button>
                       ) : (
-                        <span className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
-                          <span className="h-2 w-2 rounded-full bg-slate-400" /> Busy
-                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!isApproved}
+                          title={!isApproved ? 'Provider must be APPROVED before activation' : undefined}
+                          onClick={() => handleOpenActivation(p, 'activate')}
+                          className="rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50 text-xs font-semibold gap-1.5 disabled:opacity-50"
+                        >
+                          <Power className="h-3.5 w-3.5" />
+                          Activate Listing
+                        </Button>
                       )}
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1 font-mono font-medium text-foreground">
-                        <Phone className="h-3 w-3 text-primary" />
-                        {p.phone}
-                      </span>
-                      {p.subCity && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-primary" />
-                          {p.subCity.nameEn}
-                          {p.woreda && ` (Woreda ${p.woreda})`}
-                        </span>
-                      )}
-                      <span>{p.experienceYears} yrs experience</span>
-                      <span>{p.stats?.rating?.toFixed(1) || '0.0'} ★ ({p.stats?.reviewsCount || 0} reviews)</span>
-                    </div>
                   </div>
-
-                  {/* Right: Administrative Actions */}
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <a
-                      href={`/providers/${p.id}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex"
-                    >
-                      <Button variant="outline" size="sm" className="rounded-xl text-xs gap-1.5">
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        Public Profile
-                      </Button>
-                    </a>
-
-                    {/* Reset Password Button */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleOpenResetPassword(p)}
-                      className="rounded-xl text-xs font-semibold gap-1.5 border-border/80 text-foreground hover:bg-slate-50"
-                    >
-                      <KeyRound className="h-3.5 w-3.5 text-amber-600" />
-                      Reset Password
-                    </Button>
-
-                    {/* Activation / Suspension Toggle */}
-                    {p.isActive !== false ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenActivation(p, 'suspend')}
-                        className="rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-semibold gap-1.5"
-                      >
-                        <Power className="h-3.5 w-3.5" />
-                        Suspend Listing
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenActivation(p, 'activate')}
-                        className="rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50 text-xs font-semibold gap-1.5"
-                      >
-                        <Power className="h-3.5 w-3.5" />
-                        Reactivate Listing
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
 
             {/* Pagination Controls */}
             {!searchedProvider && pagination.totalPages > 1 && (
@@ -400,35 +524,33 @@ export function AdminProvidersPage() {
                 {activationType === 'suspend' ? 'Suspend Provider Listing' : 'Reactivate Provider Listing'}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Provider: <span className="font-semibold text-foreground">{actionProvider?.fullName}</span> (#{actionProvider?.id})
+                {activationType === 'suspend'
+                  ? `Suspending ${actionProvider?.fullName} will immediately hide them from all public search results and call leads.`
+                  : `Reactivating ${actionProvider?.fullName} will immediately make their verified profile visible to domestic customers across Addis Ababa.`}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="my-4 space-y-3">
-              {activationType === 'suspend' ? (
-                <>
-                  <p className="text-xs text-muted-foreground">
-                    Suspending hides this provider from all public search results and disables customer calls immediately.
-                  </p>
-                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Suspension Reason (Required for Audit)
-                  </label>
-                  <Input
-                    value={suspensionReason}
-                    onChange={(e) => setSuspensionReason(e.target.value)}
-                    placeholder="e.g. Repeated customer complaints, unreachable phone"
-                    className="rounded-xl"
-                    autoFocus
-                  />
-                </>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Reactivating restores this provider to the public directory if their identity verification is approved.
-                </p>
-              )}
-            </div>
+            {activationType === 'suspend' && (
+              <div className="space-y-2 py-3">
+                <label className="text-xs font-semibold text-foreground">
+                  Suspension Reason (Required for Audit Logs)
+                </label>
+                <Input
+                  placeholder="e.g. Unreachable on verified phone, customer dispute pending..."
+                  value={suspensionReason}
+                  onChange={(e) => setSuspensionReason(e.target.value)}
+                  className="rounded-xl text-xs"
+                />
+              </div>
+            )}
 
-            <DialogFooter className="gap-2">
+            {actionError && (
+              <div className="rounded-xl bg-destructive/10 p-3 text-xs font-medium text-destructive">
+                {actionError}
+              </div>
+            )}
+
+            <DialogFooter className="gap-2 sm:gap-0 mt-4">
               <Button
                 variant="outline"
                 onClick={() => setActivationType(null)}
@@ -438,48 +560,55 @@ export function AdminProvidersPage() {
               </Button>
               <Button
                 variant={activationType === 'suspend' ? 'destructive' : 'default'}
-                disabled={activationMutation.isPending || (activationType === 'suspend' && !suspensionReason.trim())}
+                disabled={activationMutation.isPending}
                 onClick={handleConfirmActivation}
                 className="rounded-xl text-xs font-semibold"
               >
-                {activationType === 'suspend' ? 'Confirm Suspension' : 'Confirm Reactivation'}
+                {activationMutation.isPending
+                  ? 'Updating...'
+                  : activationType === 'suspend'
+                  ? 'Confirm Suspension'
+                  : 'Confirm Activation'}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        {/* Password Reset Modal */}
+        {/* Reset Password Modal */}
         <Dialog open={Boolean(actionProvider && !activationType)} onOpenChange={(open) => !open && setActionProvider(null)}>
           <DialogContent className="max-w-md rounded-3xl p-6">
             <DialogHeader>
-              <div className="flex items-center gap-2 text-amber-600">
-                <KeyRound className="h-5 w-5" />
-                <DialogTitle className="font-heading text-lg font-bold">
-                  Issue Temporary Password
-                </DialogTitle>
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
+                <KeyRound className="h-6 w-6" />
               </div>
-              <DialogDescription className="text-xs text-muted-foreground">
-                Reset credentials for <span className="font-semibold text-foreground">{actionProvider?.fullName}</span>.
+              <DialogTitle className="text-center font-heading text-lg font-bold">
+                Admin Password Reset
+              </DialogTitle>
+              <DialogDescription className="text-center text-xs text-muted-foreground">
+                Generate a temporary password for <strong>{actionProvider?.fullName}</strong> ({actionProvider?.phone}).
+                All active sessions will be revoked, and the provider will be required to choose a new password upon login.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="my-4 space-y-3">
-              <div className="rounded-xl bg-amber-50 border border-amber-200/80 p-3 text-xs text-amber-800">
-                <span className="font-semibold">Security Behavior (spec §4.4):</span> A 12+ character temporary password will be generated. All existing refresh tokens will be revoked, and the provider will be forced to choose a new password upon login.
-              </div>
-
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Reason / Ticket Reference (Optional)
+            <div className="space-y-2 py-3">
+              <label className="text-xs font-semibold text-foreground">
+                Administrative Reason (Optional)
               </label>
               <Input
+                placeholder="e.g. Identity verified via telephone support call..."
                 value={resetReason}
                 onChange={(e) => setResetReason(e.target.value)}
-                placeholder="e.g. Provider forgot credentials or requested via phone"
-                className="rounded-xl"
+                className="rounded-xl text-xs"
               />
             </div>
 
-            <DialogFooter className="gap-2">
+            {actionError && (
+              <div className="rounded-xl bg-destructive/10 p-3 text-xs font-medium text-destructive">
+                {actionError}
+              </div>
+            )}
+
+            <DialogFooter className="gap-2 sm:gap-0 mt-4">
               <Button
                 variant="outline"
                 onClick={() => setActionProvider(null)}
@@ -493,64 +622,59 @@ export function AdminProvidersPage() {
                 onClick={handleConfirmResetPassword}
                 className="rounded-xl text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white"
               >
-                {resetPasswordMutation.isPending ? 'Generating...' : 'Generate Temporary Password'}
+                {resetPasswordMutation.isPending ? 'Generating...' : 'Issue Temporary Password'}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        {/* Temporary Password Revealed Modal (Shown ONCE) */}
+        {/* Generated Password Modal */}
         <Dialog open={Boolean(generatedPassword)} onOpenChange={(open) => !open && setGeneratedPassword('')}>
           <DialogContent className="max-w-md rounded-3xl p-6">
             <DialogHeader>
-              <div className="flex items-center gap-2 text-emerald-600">
-                <ShieldCheck className="h-5 w-5" />
-                <DialogTitle className="font-heading text-lg font-bold">
-                  Temporary Password Generated
-                </DialogTitle>
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800">
+                <ShieldCheck className="h-6 w-6" />
               </div>
-              <DialogDescription className="text-xs text-muted-foreground">
-                Copy and deliver this password to the provider. It is shown only once and will never be logged.
+              <DialogTitle className="text-center font-heading text-lg font-bold">
+                Temporary Password Generated
+              </DialogTitle>
+              <DialogDescription className="text-center text-xs text-muted-foreground">
+                Copy and deliver this password securely to the verified provider over phone support.
+                <span className="block mt-1 font-semibold text-amber-700">
+                  This password will NOT be shown again.
+                </span>
               </DialogDescription>
             </DialogHeader>
 
-            <div className="my-5 space-y-4">
-              <div className="flex items-center justify-between rounded-2xl border-2 border-emerald-500/40 bg-emerald-50/50 p-4">
-                <span className="font-mono text-base font-bold tracking-wider text-emerald-950">
-                  {generatedPassword}
-                </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => copyToClipboard(generatedPassword)}
-                  className="rounded-xl border-emerald-300 bg-white hover:bg-emerald-100 text-xs font-semibold gap-1.5"
-                >
-                  {hasCopied ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 text-emerald-600" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3.5 w-3.5" />
-                      Copy
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              <p className="text-xs text-muted-foreground">
-                The provider must enter this password at <span className="font-mono text-foreground font-medium">/provider/login</span> and will immediately be prompted to create their permanent private password before accessing features.
-              </p>
+            <div className="my-4 rounded-2xl border border-border bg-slate-50 p-4 text-center">
+              <span className="block font-mono text-xl font-bold tracking-wider text-foreground select-all">
+                {generatedPassword}
+              </span>
             </div>
 
-            <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => handleCopyPassword(generatedPassword)}
+              className="w-full rounded-xl text-xs font-semibold gap-2"
+            >
+              {hasCopied ? (
+                <>
+                  <Check className="h-4 w-4 text-emerald-600" /> Copied to Clipboard
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" /> Copy Password
+                </>
+              )}
+            </Button>
+
+            <DialogFooter className="mt-4">
               <Button
                 variant="default"
                 onClick={() => setGeneratedPassword('')}
                 className="w-full rounded-xl text-xs font-semibold"
               >
-                I have securely saved / sent this password
+                Done
               </Button>
             </DialogFooter>
           </DialogContent>

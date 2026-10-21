@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { useModerateReview } from '@/hooks/useAdminPortal';
-import { useProviderReviews } from '@/hooks/useReviews';
-import { api } from '@/lib/api-client';
+import { useAdminReviews, useModerateReview } from '@/hooks/useAdminPortal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -27,18 +25,24 @@ import {
   User,
   Clock,
   ExternalLink,
+  Flag,
 } from 'lucide-react';
 
 export function AdminReviewsPage() {
-  const [providerIdInput, setProviderIdInput] = useState('1');
-  const [activeProviderId, setActiveProviderId] = useState(1);
-  const [reviewIdInput, setReviewIdInput] = useState('');
-  const [directReview, setDirectReview] = useState(null);
-  const [directLoading, setDirectLoading] = useState(false);
-  const [directError, setDirectError] = useState('');
+  const [activeTab, setActiveTab] = useState('reported'); // 'reported' | 'all'
+  const [providerIdFilter, setProviderIdFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [page, setPage] = useState(1);
 
-  // Provider reviews query
-  const { data: reviewsData, isLoading, refetch } = useProviderReviews(activeProviderId, { limit: 20 });
+  // Queries
+  const { data: reviewsData, isLoading, refetch } = useAdminReviews({
+    reportedOnly: activeTab === 'reported' ? 'true' : 'false',
+    status: statusFilter,
+    providerId: providerIdFilter.trim() ? Number(providerIdFilter.trim()) : undefined,
+    page,
+    limit: 15,
+  });
+
   const moderateMutation = useModerateReview();
 
   // Moderation modal state
@@ -48,13 +52,7 @@ export function AdminReviewsPage() {
   const [actionError, setActionError] = useState('');
 
   const reviews = reviewsData?.data || [];
-
-  const handleSearchProvider = (e) => {
-    e.preventDefault();
-    if (!providerIdInput.trim()) return;
-    setActiveProviderId(Number(providerIdInput.trim()));
-    setDirectReview(null);
-  };
+  const pagination = reviewsData?.pagination || { page: 1, totalPages: 1, total: 0 };
 
   const handleOpenModeration = (review, action) => {
     setTargetReview(review);
@@ -75,14 +73,6 @@ export function AdminReviewsPage() {
         status: targetAction === 'HIDE' ? 'HIDDEN' : 'PUBLISHED',
         reason: moderationReason.trim(),
       });
-
-      // Update direct review if viewing
-      if (directReview && directReview.id === targetReview.id) {
-        setDirectReview({
-          ...directReview,
-          status: targetAction === 'HIDE' ? 'HIDDEN' : 'PUBLISHED',
-        });
-      }
 
       setTargetReview(null);
       setTargetAction(null);
@@ -105,23 +95,69 @@ export function AdminReviewsPage() {
           </p>
         </div>
 
-        {/* Provider Reviews Inspector Form */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <form onSubmit={handleSearchProvider} className="flex-1 flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground" />
+        {/* Tab & Filter Controls */}
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-3">
+            {/* Queue Switcher */}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('reported');
+                  setPage(1);
+                }}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                  activeTab === 'reported'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Flag className="h-3.5 w-3.5" />
+                Reported Queue
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('all');
+                  setPage(1);
+                }}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                  activeTab === 'all'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
+                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                All Customer Reviews
+              </button>
+            </div>
+
+            {/* Filter by Provider ID */}
+            <div className="flex items-center gap-2">
               <Input
                 type="number"
-                value={providerIdInput}
-                onChange={(e) => setProviderIdInput(e.target.value)}
-                placeholder="Enter Provider ID (e.g. 1)..."
-                className="pl-10 rounded-xl"
+                placeholder="Filter by Provider ID..."
+                value={providerIdFilter}
+                onChange={(e) => {
+                  setProviderIdFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="w-48 h-9 text-xs rounded-xl"
               />
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="h-9 rounded-xl border border-input bg-background px-3 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="PUBLISHED">Published</option>
+                <option value="HIDDEN">Hidden</option>
+              </select>
             </div>
-            <Button type="submit" className="rounded-xl text-xs font-semibold px-5">
-              Inspect Provider Reviews
-            </Button>
-          </form>
+          </div>
         </div>
 
         {actionError && (
@@ -130,50 +166,44 @@ export function AdminReviewsPage() {
           </div>
         )}
 
-        {/* Reviews List for Active Provider */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-heading text-base font-bold text-foreground">
-              Reviews for Provider #{activeProviderId}
-            </h2>
-            <a
-              href={`/providers/${activeProviderId}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
-            >
-              View Public Page
-              <ExternalLink className="h-3 w-3" />
-            </a>
+        {/* Reviews List */}
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-100" />
+            ))}
           </div>
+        ) : reviews.length === 0 ? (
+          <Card className="rounded-3xl border-border/60 p-12 text-center">
+            <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground/40 mb-3" />
+            <h3 className="font-heading text-lg font-bold text-foreground">
+              {activeTab === 'reported' ? 'No Reported Reviews' : 'No Reviews Found'}
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {activeTab === 'reported'
+                ? 'Great news! There are no customer reviews flagged for community moderation right now.'
+                : 'No reviews match your selected filters.'}
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {reviews.map((rev) => {
+              const isHidden = rev.status === 'HIDDEN';
+              const hasReports = rev.reportCount > 0;
 
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2].map((i) => (
-                <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-100" />
-              ))}
-            </div>
-          ) : reviews.length === 0 ? (
-            <Card className="rounded-3xl border-border/60 p-12 text-center">
-              <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground/40 mb-3" />
-              <h3 className="font-heading text-lg font-bold text-foreground">No Reviews Found</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Provider #{activeProviderId} has not received any published customer reviews yet.
-              </p>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {reviews.map((rev) => (
+              return (
                 <Card
                   key={rev.id}
-                  className="rounded-2xl border-border/60 p-5 shadow-sm hover:border-primary/40 transition-all bg-white"
+                  className="rounded-2xl border-border/60 p-5 shadow-xs hover:border-primary/40 transition-all bg-card"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="space-y-2 flex-1">
+                      {/* Top Meta Line */}
+                      <div className="flex flex-wrap items-center gap-2.5">
                         <span className="text-xs font-mono font-bold text-muted-foreground">
                           Review #{rev.id}
                         </span>
+
                         <div className="flex items-center gap-1 text-amber-500">
                           {Array.from({ length: 5 }).map((_, i) => (
                             <Star
@@ -185,45 +215,75 @@ export function AdminReviewsPage() {
                           ))}
                         </div>
                         <span className="text-xs font-bold text-foreground">{rev.rating}.0</span>
+
                         <Badge
                           variant="outline"
                           className={
-                            rev.status === 'HIDDEN'
+                            isHidden
                               ? 'border-rose-300 bg-rose-50 text-rose-800'
                               : 'border-emerald-300 bg-emerald-50 text-emerald-800'
                           }
                         >
-                          {rev.status || 'PUBLISHED'}
+                          {rev.status}
                         </Badge>
+
+                        {hasReports && (
+                          <Badge variant="destructive" className="text-[11px] font-semibold gap-1">
+                            <Flag className="h-3 w-3" /> Flagged ({rev.reportCount} report{rev.reportCount > 1 ? 's' : ''})
+                          </Badge>
+                        )}
                       </div>
 
-                      <p className="text-sm text-foreground italic">
-                        "{rev.comment || 'No written comment'}"
+                      {/* Comment text */}
+                      <p className="text-sm text-foreground italic bg-muted/30 p-3 rounded-xl border border-border/50">
+                        "{rev.comment || 'No comment text provided'}"
                       </p>
 
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1 font-medium">
-                          <User className="h-3 w-3" />
-                          {rev.customerName || 'Verified Customer'}
+                      {/* Author & Provider Info */}
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1 font-medium text-foreground">
+                          <User className="h-3.5 w-3.5 text-primary" />
+                          Author: {rev.customerName || `Customer #${rev.customerId}`}
+                        </span>
+                        <span>
+                          For Provider: <strong>{rev.providerName}</strong> (#{rev.providerId})
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {new Date(rev.createdAt).toLocaleDateString()}
                         </span>
                       </div>
+
+                      {/* Moderation audit info if hidden */}
+                      {rev.moderationReason && (
+                        <div className="text-xs text-rose-700 bg-rose-50 border border-rose-200/60 rounded-xl px-3 py-1.5 mt-2">
+                          <span className="font-semibold">Moderation Note:</span> {rev.moderationReason}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Moderation Actions */}
-                    <div className="flex items-center gap-2">
-                      {rev.status === 'HIDDEN' ? (
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 self-start sm:self-center">
+                      <a
+                        href={`/providers/${rev.providerId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex"
+                      >
+                        <Button variant="outline" size="sm" className="rounded-xl text-xs gap-1">
+                          <ExternalLink className="h-3.5 w-3.5" /> Pro Page
+                        </Button>
+                      </a>
+
+                      {isHidden ? (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleOpenModeration(rev, 'PUBLISH')}
-                          className="rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50 text-xs font-semibold gap-1.5"
+                          className="rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-xs font-semibold gap-1.5"
                         >
                           <Eye className="h-3.5 w-3.5" />
-                          Republish
+                          Publish Review
                         </Button>
                       ) : (
                         <Button
@@ -239,52 +299,76 @@ export function AdminReviewsPage() {
                     </div>
                   </div>
                 </Card>
-              ))}
-            </div>
-          )}
-        </div>
+              );
+            })}
 
-        {/* Moderation Confirmation Dialog */}
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4">
+                <span className="text-xs text-muted-foreground">
+                  Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className="rounded-xl text-xs"
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= pagination.totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                    className="rounded-xl text-xs"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Moderation Confirmation Modal */}
         <Dialog open={Boolean(targetReview)} onOpenChange={(open) => !open && setTargetReview(null)}>
           <DialogContent className="max-w-md rounded-3xl p-6">
             <DialogHeader>
-              <div className="flex items-center gap-2">
-                {targetAction === 'HIDE' ? (
-                  <EyeOff className="h-5 w-5 text-rose-600" />
-                ) : (
-                  <Eye className="h-5 w-5 text-emerald-600" />
-                )}
-                <DialogTitle className="font-heading text-lg font-bold">
-                  {targetAction === 'HIDE' ? 'Hide Customer Review' : 'Republish Customer Review'}
-                </DialogTitle>
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                {targetAction === 'HIDE' ? <EyeOff className="h-6 w-6 text-rose-600" /> : <Eye className="h-6 w-6 text-emerald-600" />}
               </div>
-              <DialogDescription className="text-xs text-muted-foreground">
-                Review #{targetReview?.id} by {targetReview?.customerName || 'Customer'}
+              <DialogTitle className="text-center font-heading text-lg font-bold">
+                {targetAction === 'HIDE' ? 'Hide Review from Public Listing' : 'Restore / Publish Review'}
+              </DialogTitle>
+              <DialogDescription className="text-center text-xs text-muted-foreground">
+                {targetAction === 'HIDE'
+                  ? 'Hiding this review will remove its rating from the provider’s public score and hide its text from the public directory.'
+                  : 'Publishing will restore this review’s score and make its text visible to public visitors.'}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="my-4 space-y-3">
-              <div className="rounded-xl bg-slate-50 p-3 text-xs italic text-foreground border border-border/60">
-                "{targetReview?.comment || 'No comment text'}"
-              </div>
-
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Audit Reason (Required)
+            <div className="space-y-2 py-3">
+              <label className="text-xs font-semibold text-foreground">
+                Moderation Reason (Required for Audit Logs)
               </label>
               <Input
+                placeholder="e.g. Inappropriate language, off-topic spam, resolved dispute..."
                 value={moderationReason}
                 onChange={(e) => setModerationReason(e.target.value)}
-                placeholder={
-                  targetAction === 'HIDE'
-                    ? 'e.g. Profanity, harassment, or competitor spam'
-                    : 'e.g. Cleared after appeal or mistake'
-                }
-                className="rounded-xl"
-                autoFocus
+                className="rounded-xl text-xs"
               />
             </div>
 
-            <DialogFooter className="gap-2">
+            {actionError && (
+              <div className="rounded-xl bg-destructive/10 p-3 text-xs font-medium text-destructive">
+                {actionError}
+              </div>
+            )}
+
+            <DialogFooter className="gap-2 sm:gap-0 mt-4">
               <Button
                 variant="outline"
                 onClick={() => setTargetReview(null)}
@@ -294,11 +378,15 @@ export function AdminReviewsPage() {
               </Button>
               <Button
                 variant={targetAction === 'HIDE' ? 'destructive' : 'default'}
-                disabled={moderateMutation.isPending || !moderationReason.trim()}
+                disabled={moderateMutation.isPending}
                 onClick={handleConfirmModeration}
                 className="rounded-xl text-xs font-semibold"
               >
-                {targetAction === 'HIDE' ? 'Confirm Hide' : 'Confirm Republish'}
+                {moderateMutation.isPending
+                  ? 'Updating...'
+                  : targetAction === 'HIDE'
+                  ? 'Confirm Hide'
+                  : 'Confirm Publish'}
               </Button>
             </DialogFooter>
           </DialogContent>

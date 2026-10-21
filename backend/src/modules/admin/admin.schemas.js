@@ -69,3 +69,73 @@ export const decidePhoneChangeSchema = z
       });
     }
   });
+
+export const adminProvidersQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: z.enum(['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'REVOKED']).default('ALL'),
+  isActive: z.enum(['ALL', 'true', 'false']).default('ALL'),
+  categoryId: z.coerce.number().int().positive().optional(),
+  search: z.string().trim().optional(),
+});
+
+export const adminReviewsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: z.enum(['ALL', 'PUBLISHED', 'HIDDEN']).default('ALL'),
+  reportedOnly: z.enum(['true', 'false']).optional(),
+  providerId: z.coerce.number().int().positive().optional(),
+});
+
+export const createCategorySchema = z
+  .object({
+    nameEn: z.string().trim().min(2).max(100),
+    nameAm: z.string().trim().min(2).max(100),
+    slug: z.string().trim().min(2).max(100).regex(/^[a-z0-9-]+$/, 'Slug must be alphanumeric with hyphens'),
+    iconName: z.string().trim().min(1).max(50),
+    displayOrder: z.coerce.number().int().default(0),
+  })
+  .strict();
+
+export const updateCategorySchema = z
+  .object({
+    nameEn: z.string().trim().min(2).max(100).optional(),
+    nameAm: z.string().trim().min(2).max(100).optional(),
+    iconName: z.string().trim().min(1).max(50).optional(),
+    displayOrder: z.coerce.number().int().optional(),
+    isActive: z.boolean().optional(),
+  })
+  .strict();
+
+export const createCitySchema = z
+  .object({
+    nameEn: z.string().trim().min(2).max(100),
+    nameAm: z.string().trim().min(2).max(100),
+    slug: z.string().trim().min(2).max(100).regex(/^[a-z0-9-]+$/, 'Slug must be alphanumeric with hyphens'),
+  })
+  .strict();
+
+export const updateCitySchema = z
+  .object({
+    nameEn: z.string().trim().min(2).max(100).optional(),
+    nameAm: z.string().trim().min(2).max(100).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .strict();
+
+export const createSubCitySchema = z
+  .object({
+    cityId: z.coerce.number().int().positive(),
+    nameEn: z.string().trim().min(2).max(100),
+    nameAm: z.string().trim().min(2).max(100),
+    slug: z.string().trim().min(2).max(100).regex(/^[a-z0-9-]+$/, 'Slug must be alphanumeric with hyphens'),
+  })
+  .strict();
+
+export const updateSubCitySchema = z
+  .object({
+    nameEn: z.string().trim().min(2).max(100).optional(),
+    nameAm: z.string().trim().min(2).max(100).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .strict();
