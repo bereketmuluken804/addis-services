@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Navbar } from '@/components/common/Navbar';
 import { Footer } from '@/components/common/Footer';
@@ -80,6 +80,7 @@ export default function App() {
               <Route path="/services" element={<ServicesPage />} />
 
               {/* Provider Portal Routes */}
+              <Route path="/provider" element={<Navigate to="/provider/dashboard" replace />} />
               <Route path="/provider/register" element={<ProviderRegisterPage />} />
               <Route path="/provider/login" element={<ProviderLoginPage />} />
               <Route path="/provider/dashboard" element={<ProviderDashboardPage />} />
@@ -87,6 +88,7 @@ export default function App() {
               <Route path="/provider/security" element={<ProviderSecurityPage />} />
 
               {/* Admin Console Routes */}
+              <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
               <Route path="/admin/verifications" element={<AdminVerificationsPage />} />

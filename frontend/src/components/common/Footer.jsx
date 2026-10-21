@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Phone, MapPin, Heart } from 'lucide-react';
+import { ShieldCheck, Phone, MapPin, Heart, Shield } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -89,16 +89,32 @@ export function Footer() {
           <p className="text-sm leading-relaxed text-muted-foreground">
             Are you a skilled technician in Addis Ababa? Join our verified network and get called directly by customers every day.
           </p>
-          <Link to="/provider/register">
-            <button className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary-hover transition-colors">
-              Apply as a Provider
-            </button>
-          </Link>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Link to="/provider/register">
+              <button className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary-hover transition-colors">
+                Apply as a Provider
+              </button>
+            </Link>
+            <Link to="/provider/login">
+              <button className="inline-flex h-10 items-center justify-center rounded-xl border border-border/80 px-4 text-sm font-semibold text-foreground hover:bg-muted transition-colors">
+                Pro Portal
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
 
-      <div className="container mx-auto mt-12 border-t border-border/70 pt-8 text-center text-xs text-muted-foreground">
+      <div className="container mx-auto mt-12 border-t border-border/70 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground gap-4">
         <p>© {new Date().getFullYear()} Addis Services. Built with care for domestic technicians & households in Addis Ababa.</p>
+        <div className="flex items-center gap-4">
+          <Link
+            to="/admin/login"
+            className="inline-flex items-center gap-1.5 text-muted-foreground/80 hover:text-primary transition-colors font-medium"
+          >
+            <Shield className="h-3.5 w-3.5" />
+            Admin Console
+          </Link>
+        </div>
       </div>
     </footer>
   );
