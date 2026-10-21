@@ -33,8 +33,9 @@ export function AdminLoginPage() {
     }
 
     try {
-      const data = await login({ email, password });
-      if (data?.user?.role !== 'ADMIN') {
+      const loggedUser = await login({ email: email.trim(), password });
+      const role = loggedUser?.role || loggedUser?.user?.role;
+      if (role !== 'ADMIN') {
         await logout();
         setFormError('Access denied. Administrator privileges required.');
         return;
@@ -80,7 +81,7 @@ export function AdminLoginPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@servicehub.et"
+                    placeholder="admin@example.com"
                     required
                     className="pl-10 rounded-xl"
                   />

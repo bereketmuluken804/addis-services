@@ -34,6 +34,7 @@ async function request(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
   const headers = {
     Accept: 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
     ...options.headers,
   };
 
@@ -78,7 +79,10 @@ async function request(endpoint, options = {}) {
     if (!refreshPromise) {
       refreshPromise = (async () => {
         try {
-          const refHeaders = { Accept: 'application/json' };
+          const refHeaders = {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+          };
           if (csrfToken) refHeaders['x-csrf-token'] = csrfToken;
           const refreshRes = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
             method: 'POST',

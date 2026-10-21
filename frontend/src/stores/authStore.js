@@ -37,12 +37,24 @@ export const useAuthStore = create((set) => ({
     const res = await api.post('/api/auth/login', payload);
     const { accessToken, user: apiUser, provider, customer, admin } = res.data;
     const jwtPayload = parseJwt(accessToken);
-    const role = apiUser?.role || provider ? 'PROVIDER' : customer ? 'CUSTOMER' : admin ? 'ADMIN' : jwtPayload?.role;
-    const user = apiUser || provider || customer || admin || { id: jwtPayload?.sub, role };
+
+    let role = jwtPayload?.role;
+    if (apiUser?.role) {
+      role = apiUser.role;
+    } else if (admin) {
+      role = 'ADMIN';
+    } else if (provider) {
+      role = 'PROVIDER';
+    } else if (customer) {
+      role = 'CUSTOMER';
+    }
+
+    const baseUserData = apiUser || admin || provider || customer || { id: jwtPayload?.sub };
+    const user = { ...baseUserData, role };
 
     setAccessToken(accessToken);
-    set({ user: { ...user, role }, isAuthenticated: true, isLoading: false });
-    return { ...user, role };
+    set({ user, isAuthenticated: true, isLoading: false });
+    return user;
   },
 
   logout: async () => {
