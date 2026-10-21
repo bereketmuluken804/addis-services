@@ -13,10 +13,7 @@ export function HomePage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-ambient-radial pt-20 pb-28 text-center sm:pt-28 sm:pb-36">
         <div className="container mx-auto px-4">
-          <div className="inline-flex items-center space-x-2 rounded-full border border-primary/20 bg-primary-light/60 px-4 py-1.5 text-xs font-semibold text-primary mb-8 shadow-xs">
-            <ShieldCheck className="h-4 w-4" />
-            <span>Addis Ababa’s Verified Domestic Service Network</span>
-          </div>
+          
 
           <h1 className="mx-auto max-w-4xl font-heading text-4xl font-extrabold tracking-tight text-foreground sm:text-6xl sm:leading-[1.12]">
             Find verified home technicians in your sub-city.
@@ -112,13 +109,11 @@ export function HomePage() {
       <section className="container mx-auto px-4">
         <div className="relative overflow-hidden rounded-3xl bg-primary px-8 py-16 text-primary-foreground shadow-2xl sm:px-16 sm:py-20">
           <div className="relative z-10 mx-auto max-w-2xl text-center">
-            <span className="inline-block rounded-full bg-white/10 px-4 py-1 text-xs font-semibold text-white/90 mb-6 backdrop-blur-sm">
-              For Skilled Technicians & Domestic Workers
-            </span>
-            <h2 className="font-heading text-3xl font-extrabold tracking-tight sm:text-5xl sm:leading-tight">
+            
+            <h2 className="font-heading text-3xl font-extrabold tracking-tight sm:text-5xl sm:leading-tight text-primary-light">
               Grow your client base across Addis Ababa.
             </h2>
-            <p className="mt-5 text-base sm:text-lg text-primary-light/90 leading-relaxed">
+            <p className="mt-5 text-base sm:text-lg text-primary-light/80 leading-relaxed">
               Register as a verified professional today. Get calls directly from local homeowners, businesses, and property managers.
             </p>
             <div className="mt-10 flex flex-wrap justify-center gap-4">

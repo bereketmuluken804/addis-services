@@ -6,11 +6,12 @@ let storageInstance;
 
 export function getStorage() {
   if (!storageInstance) {
-    if (
-      env.NODE_ENV === 'test' ||
-      !env.CLOUD_STORAGE_BUCKET ||
-      !env.CLOUD_STORAGE_ACCESS_KEY_ID
-    ) {
+    const hasS3Config =
+      env.CLOUD_STORAGE_BUCKET &&
+      env.CLOUD_STORAGE_ACCESS_KEY_ID &&
+      env.CLOUD_STORAGE_SECRET_ACCESS_KEY;
+
+    if (env.NODE_ENV === 'test' || !hasS3Config) {
       storageInstance = new MemoryStorageAdapter();
     } else {
       storageInstance = new S3StorageAdapter({
