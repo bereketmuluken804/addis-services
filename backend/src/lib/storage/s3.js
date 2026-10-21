@@ -10,16 +10,18 @@ export class S3StorageAdapter {
   constructor({ bucket, region, endpoint, accessKeyId, secretAccessKey }) {
     this.bucket = bucket;
     const clientConfig = {
-      region,
+      region: region || 'us-east-1',
       credentials: {
         accessKeyId,
         secretAccessKey,
       },
+      forcePathStyle: true, // Required for Neon / MinIO / S3-compatible endpoints
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
     };
 
     if (endpoint) {
       clientConfig.endpoint = endpoint;
-      clientConfig.forcePathStyle = true; // Useful for MinIO / LocalStack / alternative S3
     }
 
     this.s3 = new S3Client(clientConfig);
@@ -50,21 +52,5 @@ export class S3StorageAdapter {
       Key: key,
     });
     return await getSignedUrl(this.s3, command, { expiresIn: expiresInSeconds });
-  }
-
-  async getObject(key) {
-    const command = new GetObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-    });
-    const response = await this.s3.send(command);
-    const chunks = [];
-    for await (const chunk of response.Body) {
-      chunks.push(chunk);
-    }
-    return {
-      buffer: Buffer.concat(chunks),
-      contentType: response.ContentType,
-    };
   }
 }
