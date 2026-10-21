@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Background & Surface: Warm off-white */
+    --background: 40 20% 99%;
+    --foreground: 215 25% 15%;
+
+    /* Card & Surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+
+    /* Primary: Deep Forest Green (Trustworthy, Reliable) */
+    --primary: 158 64% 22%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 158 68% 18%;
+    --primary-light: 158 45% 94%;
+
+    /* Secondary / Accent: Warm Amber (Ratings, Badges, Highlights) */
+    --secondary: 38 92% 50%;
+    --secondary-foreground: 215 25% 12%;
+    --secondary-hover: 38 92% 44%;
+    --secondary-light: 40 100% 95%;
+
+    /* Neutral Muted & Borders */
+    --muted: 215 20% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 158 45% 95%;
+    --accent-foreground: 158 64% 20%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 20% 90%;
+    --input: 215 20% 90%;
+    --ring: 158 64% 22%;
+
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight text-foreground;
+  }
+}
+
+/* Custom subtle graphic ambient background */
+.bg-ambient-radial {
+  background-image: radial-gradient(circle at 50% 0%, hsl(var(--primary-light) / 0.7) 0%, transparent 60%);
+}
+
+.bg-dot-pattern {
+  background-image: radial-gradient(hsl(var(--foreground) / 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
