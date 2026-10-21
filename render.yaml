@@ -1,6 +1,7 @@
 services:
   - type: web
     name: domestic-services-api
+    rootDir: backend
     runtime: node
     plan: starter
     region: oregon
