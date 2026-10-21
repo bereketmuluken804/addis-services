@@ -6,10 +6,11 @@ import { Footer } from '@/components/common/Footer';
 import { HomePage } from '@/pages/public/HomePage';
 import { DirectoryPage } from '@/pages/public/DirectoryPage';
 import { ServicesPage } from '@/pages/public/ServicesPage';
+import { ProviderDetailPage } from '@/pages/public/ProviderDetailPage';
 import { CallLeadModal } from '@/components/public/CallLeadModal';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,6 +64,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/providers" element={<DirectoryPage />} />
+              <Route path="/providers/:id" element={<ProviderDetailPage />} />
               <Route path="/services" element={<ServicesPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
