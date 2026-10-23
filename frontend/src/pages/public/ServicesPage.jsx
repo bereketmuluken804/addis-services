@@ -1,41 +1,42 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wrench, Zap, Tv, PaintBucket, Cpu, Shirt, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Wrench, Zap, Tv, PaintBucket, Cpu, Shirt, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useCategories } from '@/hooks/useCategories';
 import { useSearchStore } from '@/stores/searchStore';
 
 const serviceDetails = {
   plumbing: {
     icon: Wrench,
-    color: 'text-emerald-700 bg-emerald-50 border-emerald-100',
-    tasks: ['Pipe leak repairs & replacements', 'Toilet & sink unclogging', 'Water pump & tank installations', 'Water heater (geyser) servicing'],
+    scope: 'Residential pipework, water storage tanks, booster pumps, geyser water heater servicing, and drainage repairs.',
+    tags: ['Water Pumps', 'Geysers', 'Pipe Leaks', 'Drain Unclogging'],
   },
   electrical: {
     icon: Zap,
-    color: 'text-amber-700 bg-amber-50 border-amber-100',
-    tasks: ['Short circuit diagnosis & repair', 'Circuit breaker & fuse box upgrades', 'Socket & switch replacements', 'Interior & exterior lighting setups'],
+    scope: 'Circuit breaker diagnosis, phase imbalance repairs, lighting installation, socket replacements, and safety checks.',
+    tags: ['Circuit Breakers', 'Phase Faults', 'Wiring', 'Fixture Mounting'],
   },
   'satellite-dish': {
     icon: Tv,
-    color: 'text-blue-700 bg-blue-50 border-blue-100',
-    tasks: ['NSS / Amos / Eutelsat dish alignments', 'Receiver decoding & channel tuning', 'LNB replacement & signal boost', 'Multi-room TV cabling'],
+    scope: 'Multi-satellite dish alignment (NSS 12, Amos, Eutelsat), receiver tuning, signal booster setup, and coaxial cabling.',
+    tags: ['Dish Tuning', 'Receiver Setup', 'LNB Replacement', 'Cabling'],
   },
   'wall-painting': {
     icon: PaintBucket,
-    color: 'text-rose-700 bg-rose-50 border-rose-100',
-    tasks: ['Interior wall & ceiling painting', 'Exterior weather-proof coating', 'Plaster & gypsum patch repairs', 'Decorative finishes & accents'],
+    scope: 'Interior wall painting, weather-proof exterior coats, gypsum ceiling patches, surface smoothing, and decorative trim.',
+    tags: ['Interior Painting', 'Gypsum Repair', 'Exterior Coats', 'Touch-ups'],
   },
   'appliance-repair': {
     icon: Cpu,
-    color: 'text-purple-700 bg-purple-50 border-purple-100',
-    tasks: ['Washing machine & dryer diagnostics', 'Refrigerator & freezer cooling fixes', 'Oven, microwave & stove repairs', 'Water purifier maintenance'],
+    scope: 'Diagnostics and parts replacement for refrigerators, domestic washing machines, stoves, ovens, and water purifiers.',
+    tags: ['Refrigerators', 'Washing Machines', 'Ovens & Stoves', 'Motors'],
   },
   'clothes-washing': {
     icon: Shirt,
-    color: 'text-teal-700 bg-teal-50 border-teal-100',
-    tasks: ['Residential domestic laundry care', 'Delicate fabric hand washing', 'Ironing, folding & garment steaming', 'Blanket, curtain & linen washing'],
+    scope: 'Experienced home laundry specialists for everyday garments, delicate fabrics, bed linens, curtains, and steam ironing.',
+    tags: ['Domestic Laundry', 'Delicate Handwash', 'Ironing & Folding', 'Linens'],
   },
 };
 
@@ -50,55 +51,92 @@ export function ServicesPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-16">
-      <div className="mx-auto max-w-3xl text-center mb-16">
-        <h1 className="font-heading text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl">
-          Domestic Service Categories
+    <div className="container mx-auto px-4 py-12 max-w-5xl">
+      <div className="mx-auto max-w-2xl text-center mb-12">
+        <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          Domestic Trades & Services
         </h1>
-        <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-          Explore our vetted home service offerings in Addis Ababa. Every provider has verified identity credentials.
+        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+          Explore our vetted trade offerings across Addis Ababa. Every listed professional has undergone National ID verification before going live.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-        {categories.map((cat) => {
-          const detail = serviceDetails[cat.slug] || serviceDetails.plumbing;
-          const Icon = detail.icon;
-
-          return (
-            <Card key={cat.id} className="flex flex-col justify-between p-8 border-border/80">
-              <CardHeader className="p-0">
-                <div className={`mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border ${detail.color} shadow-xs`}>
-                  <Icon className="h-8 w-8" />
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="flex flex-col justify-between p-6 border-border bg-card shadow-subtle">
+              <div>
+                <div className="flex items-center space-x-3 mb-4">
+                  <Skeleton className="h-11 w-11 rounded-lg" />
+                  <div className="space-y-1.5 flex-1">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
                 </div>
-                <CardTitle className="text-2xl font-bold">{cat.nameEn}</CardTitle>
-                <CardDescription className="text-sm font-medium text-muted-foreground mt-1">
-                  Trusted local specialists in Addis Ababa
-                </CardDescription>
-
-                <ul className="mt-6 space-y-2.5">
-                  {detail.tasks.map((task, idx) => (
-                    <li key={idx} className="flex items-start text-xs font-medium text-foreground/80">
-                      <CheckCircle2 className="mr-2 h-4 w-4 text-primary shrink-0 mt-0.5" />
-                      <span>{task}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardHeader>
-
-              <CardFooter className="mt-8 p-0">
-                <Button
-                  onClick={() => handleSelectCategory(cat.id)}
-                  className="w-full h-12 rounded-xl font-bold justify-between"
-                >
-                  <span>Find {cat.nameEn} Pros</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </CardFooter>
+                <div className="space-y-2 mb-4">
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-5/6" />
+                </div>
+                <div className="flex gap-1.5 mb-6">
+                  <Skeleton className="h-5 w-16 rounded" />
+                  <Skeleton className="h-5 w-20 rounded" />
+                  <Skeleton className="h-5 w-14 rounded" />
+                </div>
+              </div>
+              <Skeleton className="h-9 w-full rounded-lg" />
             </Card>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {categories.map((cat) => {
+            const detail = serviceDetails[cat.slug] || serviceDetails.plumbing;
+            const Icon = detail.icon;
+
+            return (
+              <Card key={cat.id} className="flex flex-col justify-between p-6 border-border bg-card shadow-subtle hover:border-primary/50 transition-colors">
+                <CardHeader className="p-0">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-light text-primary border border-primary/20 shrink-0">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg font-bold">{cat.nameEn}</CardTitle>
+                      <span className="text-[11px] text-muted-foreground">Addis Ababa</span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+                    {detail.scope}
+                  </p>
+
+                  <div className="flex flex-wrap gap-1 mb-6">
+                    {detail.tags.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="rounded bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground/75"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </CardHeader>
+
+                <CardFooter className="p-0 border-t border-border pt-4">
+                  <Button
+                    onClick={() => handleSelectCategory(cat.id)}
+                    size="sm"
+                    className="w-full h-9 rounded-lg text-xs font-semibold justify-between"
+                  >
+                    <span>View {cat.nameEn} Technicians</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

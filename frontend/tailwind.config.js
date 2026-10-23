@@ -15,8 +15,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        heading: ['"Plus Jakarta Sans"', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        heading: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
       },
       colors: {
         border: 'hsl(var(--border))',
@@ -58,18 +58,20 @@ export default {
         },
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
-        '2xl': '1rem',
-        '3xl': '1.5rem',
+        none: '0px',
+        sm: '0.125rem', // 2px
+        DEFAULT: '0.25rem', // 4px
+        md: '0.375rem', // 6px (tactile buttons, inputs)
+        lg: '0.5rem', // 8px (dialogs, menus)
+        xl: '0.75rem', // 12px
+        '2xl': '1rem', // 16px
+        full: '9999px', // pills & status badges
       },
       boxShadow: {
-        'glow-primary': '0 0 40px -10px hsl(var(--primary) / 0.15)',
-        'glow-amber': '0 0 30px -8px hsl(var(--secondary) / 0.25)',
-        subtle: '0 2px 12px -2px rgba(0, 0, 0, 0.04), 0 4px 20px -2px rgba(0, 0, 0, 0.03)',
-        card: '0 4px 24px -4px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02)',
-        'card-hover': '0 12px 32px -6px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04)',
+        subtle: '0 1px 2px 0 rgba(0, 0, 0, 0.04)',
+        card: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
+        'card-hover': '0 4px 12px 0 rgba(0, 0, 0, 0.08)',
+        dropdown: '0 6px 16px -2px rgba(0, 0, 0, 0.08)',
       },
       keyframes: {
         'accordion-down': {

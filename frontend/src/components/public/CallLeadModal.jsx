@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, Copy, Check, ShieldCheck, ExternalLink, X } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter } from '@/components/ui/drawer';
+import { Phone, Copy, Check, ShieldCheck } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useCallModalStore } from '@/stores/callModalStore';
 import { useCallLead } from '@/hooks/useCallLead';
 import { formatPhoneNumber } from '@/lib/utils';
@@ -21,12 +20,12 @@ export function CallLeadModal() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Record call lead event when modal opens for a provider
-  useEffect(() => {
-    if (isOpen && provider?.id) {
+  // Triggered when client initiates direct call via tel: anchor
+  const handleCallClick = () => {
+    if (provider?.id) {
       recordCallLead(provider.id);
     }
-  }, [isOpen, provider?.id, recordCallLead]);
+  };
 
   if (!provider) return null;
 
@@ -40,76 +39,78 @@ export function CallLeadModal() {
   };
 
   const modalBody = (
-    <div className="flex flex-col items-center text-center py-3">
-      {/* Provider Avatar & Shield */}
-      <div className="relative mb-4">
+    <div className="flex flex-col items-center text-center py-2">
+      {/* Provider Avatar */}
+      <div className="relative mb-3">
         {provider.avatarUrl ? (
           <img
             src={provider.avatarUrl}
             alt={provider.fullName}
-            className="h-20 w-20 rounded-2xl object-cover border-2 border-primary/20 shadow-md"
+            className="h-16 w-16 rounded-xl object-cover border border-border shadow-subtle"
           />
         ) : (
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary-light text-2xl font-bold font-heading text-primary border-2 border-primary/20 shadow-sm">
+          <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary-light text-xl font-bold font-heading text-primary border border-primary/20 shadow-subtle">
             {provider.fullName?.slice(0, 2).toUpperCase() || 'SP'}
           </div>
         )}
-        <div className="absolute -bottom-1 -right-1 rounded-full bg-card p-1 shadow-xs">
-          <ShieldCheck className="h-6 w-6 text-emerald-600" />
-        </div>
+        
       </div>
 
-      <h3 className="font-heading text-2xl font-bold tracking-tight text-foreground">
+      <h3 className="font-heading text-xl font-bold tracking-tight text-foreground">
         {provider.fullName}
       </h3>
-      <p className="mt-1 text-sm font-medium text-muted-foreground">
-        {provider.categoryName || provider.category?.nameEn || 'Verified Pro'} • {provider.subCityName || provider.subCity?.nameEn || 'Addis Ababa'}
+      <p className="mt-0.5 text-xs text-muted-foreground">
+        {provider.categoryName || provider.category?.nameEn || 'Verified Technician'} • {provider.subCityName || provider.subCity?.nameEn || 'Addis Ababa'}
       </p>
 
-      {/* Prominent Phone Display */}
-      <div className="mt-7 w-full rounded-2xl border border-primary/20 bg-primary-light/40 p-5 text-center shadow-xs">
-        <span className="block text-xs font-bold uppercase tracking-wider text-primary">
-          Direct Phone Number
+      {/* Phone Display (Clickable) */}
+      <a
+        href={`tel:${phone}`}
+        onClick={handleCallClick}
+        className="mt-5 w-full block rounded-lg border border-primary/20 bg-primary-light/40 p-4 text-center hover:bg-primary-light/60 transition-colors cursor-pointer group"
+        title="Click to call directly"
+      >
+        <span className="block text-[11px] font-semibold text-primary uppercase tracking-wider">
+          Mobile Number (Click to Call)
         </span>
-        <span className="mt-1 block font-heading text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+        <span className="mt-1 block font-heading text-2xl font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
           {formattedPhone}
         </span>
-      </div>
+      </a>
 
       {/* Action Buttons */}
-      <div className="mt-6 flex w-full flex-col gap-3 sm:flex-row">
-        <a href={`tel:${phone}`} className="flex-1">
+      <div className="mt-5 flex w-full flex-col gap-2.5 sm:flex-row">
+        <a href={`tel:${phone}`} onClick={handleCallClick} className="flex-1">
           <Button
-            size="lg"
-            variant="default"
-            className="w-full h-14 rounded-2xl text-base font-bold shadow-md hover:shadow-lg"
+            size="default"
+            className="w-full h-11 rounded-lg text-xs font-semibold shadow-subtle"
           >
-            <Phone className="mr-2.5 h-5 w-5" />
-            Call Now
+            <Phone className="mr-2 h-4 w-4" />
+            Call Directly
           </Button>
         </a>
         <Button
-          size="lg"
+          size="default"
           variant="outline"
           onClick={handleCopy}
-          className="h-14 rounded-2xl px-6 font-semibold"
+          className="h-11 rounded-lg px-4 text-xs font-semibold"
         >
           {copied ? (
             <>
-              <Check className="mr-2 h-5 w-5 text-emerald-600" />
-              Copied!
+              <Check className="mr-1.5 h-4 w-4 text-emerald-600" />
+              Copied
             </>
           ) : (
             <>
-              <Copy className="mr-2 h-5 w-5" />
+              <Copy className="mr-1.5 h-4 w-4" />
               Copy
             </>
           )}
         </Button>
       </div>
 
-      <p className="mt-5 text-xs text-muted-foreground/80">
-        Direct telephone call with verified local professional. No middleman service fee.
+      <p className="mt-4 text-[11px] text-muted-foreground">
+        Direct call with verified technician. No platform service fees or escrow.
       </p>
     </div>
   );
@@ -117,7 +118,7 @@ export function CallLeadModal() {
   if (isMobile) {
     return (
       <Drawer open={isOpen} onOpenChange={(open) => !open && closeCallModal()}>
-        <DrawerContent className="p-6">
+        <DrawerContent className="p-5">
           {modalBody}
         </DrawerContent>
       </Drawer>
@@ -126,7 +127,7 @@ export function CallLeadModal() {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeCallModal()}>
-      <DialogContent className="max-w-md p-8">
+      <DialogContent className="max-w-sm p-6 rounded-xl">
         {modalBody}
       </DialogContent>
     </Dialog>

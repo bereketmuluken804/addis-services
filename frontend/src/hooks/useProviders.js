@@ -6,6 +6,7 @@ export function useProviders({
   subCityId,
   availableOnly,
   searchTerm,
+  sortBy,
   page = 1,
   limit = 12,
 } = {}) {
@@ -14,11 +15,12 @@ export function useProviders({
   if (subCityId) queryParams.set('subCityId', subCityId);
   if (availableOnly) queryParams.set('availableOnly', 'true');
   if (searchTerm) queryParams.set('search', searchTerm);
+  if (sortBy) queryParams.set('sortBy', sortBy);
   queryParams.set('page', String(page));
   queryParams.set('limit', String(limit));
 
   return useQuery({
-    queryKey: ['providers', { categoryId, subCityId, availableOnly, searchTerm, page, limit }],
+    queryKey: ['providers', { categoryId, subCityId, availableOnly, searchTerm, sortBy, page, limit }],
     queryFn: async () => {
       const res = await api.get(`/api/providers?${queryParams.toString()}`);
       return res;
