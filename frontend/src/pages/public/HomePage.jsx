@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Lock, PhoneCall, CheckCircle2, UserCheck, ArrowRight, Star, MapPin, Briefcase } from 'lucide-react';
 import { HeroSearch } from '@/components/public/HeroSearch';
 import { CategoryGrid } from '@/components/public/CategoryGrid';
@@ -11,12 +11,25 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useProviders } from '@/hooks/useProviders';
 
 export function HomePage() {
+  const location = useLocation();
   const { data: popularResponse, isLoading: isPopularLoading } = useProviders({
     sortBy: 'rating',
     limit: 4,
   });
 
   const popularProviders = popularResponse?.data || [];
+
+  useEffect(() => {
+    if (location.hash === '#how-it-works' || window.location.hash === '#how-it-works') {
+      const scrollTimer = setTimeout(() => {
+        const el = document.getElementById('how-it-works');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+      return () => clearTimeout(scrollTimer);
+    }
+  }, [location.hash]);
 
   return (
     <div className="flex flex-col space-y-16 pb-16">
