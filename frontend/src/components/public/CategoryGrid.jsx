@@ -8,32 +8,32 @@ const categoryMeta = {
   plumbing: {
     icon: Wrench,
     summary: 'Water pumps, geysers, pipe leaks & drainage',
-    image: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=480&q=75',
   },
   electrical: {
     icon: Zap,
     summary: 'Circuit breakers, short circuits & rewiring',
-    image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=480&q=75',
   },
   'satellite-dish': {
     icon: Tv,
     summary: 'NSS, Amos, Eutelsat dish tuning & cabling',
-    image: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=480&q=75',
   },
   'wall-painting': {
     icon: PaintBucket,
     summary: 'Interior, exterior, gypsum & plaster finishing',
-    image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=480&q=75',
   },
   'appliance-repair': {
     icon: Cpu,
     summary: 'Refrigerators, washing machines & stove repairs',
-    image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=480&q=75',
   },
   'clothes-washing': {
     icon: Shirt,
     summary: 'Residential laundry, delicate fabrics & ironing',
-    image: 'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?auto=format&fit=crop&w=480&q=75',
   },
 };
 
@@ -77,6 +77,8 @@ export function CategoryGrid() {
             <img
               src={meta.image}
               alt={cat.nameEn}
+              loading="lazy"
+              decoding="async"
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-65"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/60 to-slate-950/20" />

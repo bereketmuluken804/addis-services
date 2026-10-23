@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import sharp from 'sharp';
 import { eq, and, count, isNull, desc, sql } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import * as schema from '../../db/schema.js';
@@ -480,10 +481,23 @@ export class ProviderService {
     const filename = `${providerId}-${crypto.randomUUID()}.${file.verifiedExt || "jpg"}`;
     const objectKey = `avatars/${filename}`;
 
+    let uploadBuffer = file.buffer;
+    let contentType = file.verifiedMime || 'image/jpeg';
+
+    try {
+      uploadBuffer = await sharp(file.buffer)
+        .resize(600, 800, { fit: 'cover', withoutEnlargement: true })
+        .jpeg({ quality: 80, progressive: true })
+        .toBuffer();
+      contentType = 'image/jpeg';
+    } catch {
+      // Fallback to original buffer if sharp fails on unusual formats
+    }
+
     await storage.upload({
       key: objectKey,
-      buffer: file.buffer,
-      contentType: file.verifiedMime || "image/jpeg",
+      buffer: uploadBuffer,
+      contentType,
     });
 
     const avatarUrl = `/api/avatars/${filename}`;

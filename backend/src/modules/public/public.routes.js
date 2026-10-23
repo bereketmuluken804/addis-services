@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'node:crypto';
 import { PublicService } from './public.service.js';
 import {
   providerDirectoryQuerySchema,
@@ -81,19 +82,52 @@ publicRouter.get(
   }
 );
 
-// 6. Public Avatars
+// 6. Public Avatars with in-memory buffer cache & ETag revalidation
+const avatarCache = new Map();
+const MAX_AVATAR_CACHE = 100;
+
 publicRouter.get(['/avatars/:filename', '/public/avatars/:filename'], async (req, res, next) => {
   try {
-    const key = `avatars/${req.params.filename}`;
-    const storage = getStorage();
-    const obj = await storage.getObject(key);
-    res.setHeader('Content-Type', obj.contentType || 'image/jpeg');
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    if (obj.stream) {
-      obj.stream.pipe(res);
-    } else {
-      res.send(obj.buffer);
+    const filename = req.params.filename;
+    const key = `avatars/${filename}`;
+
+    let cached = avatarCache.get(key);
+    if (!cached) {
+      const storage = getStorage();
+      const obj = await storage.getObject(key);
+      let buffer = obj.buffer;
+      if (!buffer && obj.stream) {
+        const chunks = [];
+        for await (const chunk of obj.stream) {
+          chunks.push(chunk);
+        }
+        buffer = Buffer.concat(chunks);
+      }
+      if (!buffer) {
+        return res.status(404).send('Not found');
+      }
+      const etag = `"${crypto.createHash('sha1').update(buffer).digest('hex')}"`;
+      cached = {
+        buffer,
+        contentType: obj.contentType || 'image/jpeg',
+        etag,
+      };
+
+      if (avatarCache.size >= MAX_AVATAR_CACHE) {
+        const firstKey = avatarCache.keys().next().value;
+        avatarCache.delete(firstKey);
+      }
+      avatarCache.set(key, cached);
     }
+
+    if (req.headers['if-none-match'] === cached.etag) {
+      return res.status(304).end();
+    }
+
+    res.setHeader('Content-Type', cached.contentType);
+    res.setHeader('ETag', cached.etag);
+    res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+    res.send(cached.buffer);
   } catch (err) {
     res.status(404).send('Not found');
   }

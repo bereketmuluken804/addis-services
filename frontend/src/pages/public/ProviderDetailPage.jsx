@@ -121,6 +121,7 @@ export function ProviderDetailPage() {
               <img
                 src={provider.avatarUrl}
                 alt={provider.fullName}
+                decoding="async"
                 className="h-20 w-20 rounded-xl object-cover border border-border shrink-0 shadow-subtle"
               />
             ) : (

@@ -46,6 +46,7 @@ export function CallLeadModal() {
           <img
             src={provider.avatarUrl}
             alt={provider.fullName}
+            decoding="async"
             className="h-16 w-16 rounded-xl object-cover border border-border shadow-subtle"
           />
         ) : (
