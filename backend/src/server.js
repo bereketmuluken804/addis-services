@@ -3,6 +3,7 @@ import { env } from './config/env.js';
 import { pool, db } from './db/client.js';
 import { logger } from './middleware/logger.js';
 import { sql } from 'drizzle-orm';
+import { startHealthPingJob } from './jobs/healthPingJob.js';
 
 async function startServer() {
   // Startup check: verify database connection
@@ -24,9 +25,13 @@ async function startServer() {
     );
   });
 
+  // Start 14-minute keep-alive health ping cron job
+  const healthPingJob = startHealthPingJob();
+
   // Graceful shutdown
   const shutdown = async (signal) => {
     logger.info(`Received ${signal}, starting graceful shutdown...`);
+    healthPingJob.stop();
     server.close(async () => {
       logger.info('HTTP server closed.');
       try {
