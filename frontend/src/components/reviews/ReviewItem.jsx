@@ -9,9 +9,13 @@ export function ReviewItem({ review, providerId, onEdit, onReport }) {
   const { user } = useAuthStore();
   const { mutateAsync: deleteReview, isPending: isDeleting } = useDeleteReview(providerId);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   // Is current logged in user the author of this review?
-  const isOwner = user?.role === 'CUSTOMER' && user?.id === review.customerId;
+  const isOwner = Boolean(
+    review.isOwner || (user?.role === 'CUSTOMER' && review.customerId && user?.id === review.customerId)
+  );
+  const authorName = review.reviewerName || review.customerName || 'Verified Client';
 
   const formattedDate = review.createdAt
     ? new Date(review.createdAt).toLocaleDateString('en-US', {
@@ -23,33 +27,34 @@ export function ReviewItem({ review, providerId, onEdit, onReport }) {
 
   const handleDelete = async () => {
     try {
+      setDeleteError(null);
       await deleteReview(review.id);
     } catch (err) {
-      alert(err.message || 'Failed to delete review');
+      setDeleteError(err.message || 'Failed to delete review');
     }
   };
 
   return (
-    <Card className="p-6 border-border/80 bg-card">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center space-x-3.5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-light font-heading text-sm font-bold text-primary">
-            {review.customerName?.slice(0, 2).toUpperCase() || 'CU'}
+    <Card className="p-4 border-border bg-card shadow-subtle rounded-lg">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center space-x-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-light font-heading text-xs font-bold text-primary shrink-0 border border-primary/20">
+            {authorName.slice(0, 2).toUpperCase()}
           </div>
           <div>
-            <h4 className="font-heading text-base font-bold text-foreground">
-              {review.customerName || 'Verified Client'}
+            <h4 className="font-heading text-sm font-bold text-foreground">
+              {authorName}
             </h4>
             <div className="flex items-center space-x-2 pt-0.5">
-              <div className="flex items-center text-amber-400">
+              <div className="flex items-center text-amber-500">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Star
                     key={s}
-                    className={`h-3.5 w-3.5 ${s <= review.rating ? 'fill-amber-400' : 'text-border'}`}
+                    className={`h-3 w-3 ${s <= review.rating ? 'fill-amber-400' : 'text-border'}`}
                   />
                 ))}
               </div>
-              <span className="text-xs text-muted-foreground">{formattedDate}</span>
+              <span className="text-[11px] text-muted-foreground">{formattedDate}</span>
             </div>
           </div>
         </div>
@@ -62,9 +67,9 @@ export function ReviewItem({ review, providerId, onEdit, onReport }) {
                 variant="ghost"
                 size="sm"
                 onClick={() => onEdit(review)}
-                className="h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                className="h-7 px-2 text-xs font-medium text-muted-foreground hover:text-foreground rounded"
               >
-                <Edit3 className="mr-1 h-3.5 w-3.5" />
+                <Edit3 className="mr-1 h-3 w-3" />
                 Edit
               </Button>
               {confirmDelete ? (
@@ -74,7 +79,7 @@ export function ReviewItem({ review, providerId, onEdit, onReport }) {
                     size="sm"
                     disabled={isDeleting}
                     onClick={handleDelete}
-                    className="h-8 px-2.5 text-xs font-bold"
+                    className="h-7 px-2 text-xs font-semibold rounded"
                   >
                     Confirm
                   </Button>
@@ -82,7 +87,7 @@ export function ReviewItem({ review, providerId, onEdit, onReport }) {
                     variant="ghost"
                     size="sm"
                     onClick={() => setConfirmDelete(false)}
-                    className="h-8 px-2 text-xs"
+                    className="h-7 px-1.5 text-xs rounded"
                   >
                     Cancel
                   </Button>
@@ -92,9 +97,9 @@ export function ReviewItem({ review, providerId, onEdit, onReport }) {
                   variant="ghost"
                   size="sm"
                   onClick={() => setConfirmDelete(true)}
-                  className="h-8 px-2 text-xs text-muted-foreground hover:text-destructive"
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive rounded"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash2 className="h-3 w-3" />
                 </Button>
               )}
             </>
@@ -104,15 +109,20 @@ export function ReviewItem({ review, providerId, onEdit, onReport }) {
               size="sm"
               onClick={() => onReport(review)}
               title="Report review"
-              className="h-8 px-2 text-xs text-muted-foreground hover:text-destructive"
+              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive rounded"
             >
-              <Flag className="h-3.5 w-3.5" />
+              <Flag className="h-3 w-3" />
             </Button>
           )}
         </div>
       </div>
 
-      <p className="mt-4 text-sm text-foreground/90 leading-relaxed font-normal">
+      {deleteError && (
+        <div className="mt-2 text-[11px] text-destructive bg-destructive/5 border border-destructive/20 p-2 rounded">
+          {deleteError}
+        </div>
+      )}
+      <p className="mt-2.5 text-xs text-foreground/85 leading-relaxed font-normal">
         {review.comment}
       </p>
     </Card>

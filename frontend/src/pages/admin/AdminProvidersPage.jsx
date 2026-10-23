@@ -7,6 +7,8 @@ import { api } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Spinner } from '@/components/ui/spinner';
 import { Card } from '@/components/ui/card';
 import {
   Dialog,
@@ -232,7 +234,7 @@ export function AdminProvidersPage() {
                 variant="outline"
                 className="rounded-xl text-xs font-semibold px-4"
               >
-                {searchLoading ? 'Looking up...' : 'Find ID'}
+                {searchLoading ? <span className="flex items-center gap-1.5"><Spinner size="xs" /> Looking up...</span> : 'Find ID'}
               </Button>
               {searchedProvider && (
                 <Button
@@ -322,9 +324,28 @@ export function AdminProvidersPage() {
 
         {/* Provider Cards / List */}
         {dirLoading && !searchedProvider ? (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-100" />
+              <Card key={i} className="p-5 border-border bg-card shadow-subtle rounded-lg">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-5 w-44" />
+                      <Skeleton className="h-4 w-20 rounded" />
+                      <Skeleton className="h-4 w-16 rounded" />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-3 w-32" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-24 rounded-md" />
+                    <Skeleton className="h-8 w-28 rounded-md" />
+                  </div>
+                </div>
+              </Card>
             ))}
           </div>
         ) : displayList.length === 0 ? (

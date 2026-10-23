@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Flag, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { useReportReview } from '@/hooks/useReviews';
 
 export function ReportReviewModal({ isOpen, onClose, review, providerId }) {

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api-client';
+import { api, setAccessToken } from '@/lib/api-client';
 
 export function useProviderMe() {
   return useQuery({
@@ -8,6 +8,9 @@ export function useProviderMe() {
       const res = await api.get('/api/provider/me');
       return res.data;
     },
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 }
 
@@ -19,8 +22,8 @@ export function useUpdateProviderProfile() {
       const res = await api.patch('/api/provider/me', profileData);
       return res.data;
     },
-    onSuccess: (updated) => {
-      queryClient.setQueryData(['provider-me'], updated);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['provider-me'] });
       queryClient.invalidateQueries({ queryKey: ['providers'] });
     },
   });
@@ -79,6 +82,12 @@ export function useChangePassword() {
     mutationFn: async ({ currentPassword, newPassword }) => {
       const res = await api.patch('/api/provider/me/password', { currentPassword, newPassword });
       return res.data;
+    },
+    onSuccess: (data) => {
+      const token = data?.accessToken;
+      if (token) {
+        setAccessToken(token);
+      }
     },
   });
 }

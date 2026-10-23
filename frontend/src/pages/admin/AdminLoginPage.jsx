@@ -51,9 +51,11 @@ export function AdminLoginPage() {
       <div className="w-full max-w-md">
         <Card className="border-border/60 shadow-lg p-2 sm:p-4 rounded-3xl">
           <CardHeader className="text-center pb-6">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <ShieldCheck className="h-7 w-7" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Addis Services Logo"
+              className="mx-auto mb-4 h-20 w-20 object-contain rounded-xl shadow-xs"
+            />
             <CardTitle className="font-heading text-2xl font-bold tracking-tight text-foreground">
               Administrator Access
             </CardTitle>

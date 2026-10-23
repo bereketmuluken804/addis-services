@@ -4,6 +4,8 @@ import { useAdminReviews, useModerateReview } from '@/hooks/useAdminPortal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Spinner } from '@/components/ui/spinner';
 import { Card } from '@/components/ui/card';
 import {
   Dialog,
@@ -91,7 +93,7 @@ export function AdminReviewsPage() {
             Review Moderation
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Enforce community guidelines (spec §6.6). Reviews can be hidden or republished with mandatory audit reasoning. Author rating and text are immutable.
+            Enforce community guidelines. Reviews can be hidden or republished with required moderator notes. Author rating and text cannot be altered.
           </p>
         </div>
 
@@ -170,7 +172,22 @@ export function AdminReviewsPage() {
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-100" />
+              <Card key={i} className="p-4 border-border bg-card shadow-subtle rounded-lg">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-16 rounded" />
+                    </div>
+                    <Skeleton className="h-3 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-24 rounded-md" />
+                  </div>
+                </div>
+              </Card>
             ))}
           </div>
         ) : reviews.length === 0 ? (
@@ -382,11 +399,16 @@ export function AdminReviewsPage() {
                 onClick={handleConfirmModeration}
                 className="rounded-xl text-xs font-semibold"
               >
-                {moderateMutation.isPending
-                  ? 'Updating...'
-                  : targetAction === 'HIDE'
-                  ? 'Confirm Hide'
-                  : 'Confirm Publish'}
+                {moderateMutation.isPending ? (
+                  <span className="flex items-center">
+                    <Spinner size="xs" className="mr-1.5 text-white border-white border-t-transparent" />
+                    Updating...
+                  </span>
+                ) : targetAction === "HIDE" ? (
+                  "Confirm Hide"
+                ) : (
+                  "Confirm Publish"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>

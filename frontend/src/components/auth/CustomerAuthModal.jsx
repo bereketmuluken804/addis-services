@@ -6,8 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api-client';
 import { useAuthStore } from '@/stores/authStore';
 import { ShieldCheck, User, Phone, Lock, AlertCircle } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
-export function CustomerAuthModal({ isOpen, onClose, onSuccess }) {
+export function CustomerAuthModal({ isOpen: propIsOpen, onClose, onSuccess, open: propOpen, onOpenChange }) {
+  const isOpen = propIsOpen !== undefined ? propIsOpen : propOpen;
+  const handleClose = () => {
+    if (typeof onClose === 'function') onClose();
+    if (typeof onOpenChange === 'function') onOpenChange(false);
+  };
   const [tab, setTab] = useState('login'); // 'login' | 'register'
   const [phone, setPhone] = useState('');
   const [fullName, setFullName] = useState('');
@@ -26,17 +32,18 @@ export function CustomerAuthModal({ isOpen, onClose, onSuccess }) {
       if (tab === 'login') {
         await login({ phone, password });
         onSuccess?.();
-        onClose();
+        handleClose();
       } else {
         const res = await api.post('/api/auth/customer/register', {
           fullName,
           phone,
           password,
         });
-        const { accessToken, user } = res.data;
-        setAuth(user, accessToken);
+        const accessToken = res.data?.accessToken;
+        const user = res.data?.customer || res.data?.user;
+        setAuth(user ? { ...user, role: 'CUSTOMER' } : null, accessToken);
         onSuccess?.();
-        onClose();
+        handleClose();
       }
     } catch (err) {
       if (err.code === 'INVALID_CREDENTIALS') {
@@ -54,7 +61,7 @@ export function CustomerAuthModal({ isOpen, onClose, onSuccess }) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={Boolean(isOpen)} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-md p-8">
         <DialogHeader className="text-center sm:text-center">
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-light text-primary shadow-xs">

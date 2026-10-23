@@ -11,6 +11,8 @@ import { useLocations } from '@/hooks/useLocations';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Spinner } from '@/components/ui/spinner';
 import {
   Dialog,
   DialogContent,
@@ -124,7 +126,7 @@ export function AdminVerificationsPage() {
     try {
       await transitionMutation.mutateAsync({
         providerId,
-        status: 'REOPENED',
+        status: 'PENDING',
       });
       if (inspectingProvider?.id === providerId) {
         setInspectingProvider(null);
@@ -162,9 +164,29 @@ export function AdminVerificationsPage() {
 
         {/* Pending Providers List */}
         {isLoading ? (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-32 animate-pulse rounded-2xl bg-slate-100 border border-border/40" />
+              <Card key={i} className="p-5 border-border bg-card shadow-subtle rounded-lg">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-5 w-40" />
+                      <Skeleton className="h-4 w-20 rounded" />
+                      <Skeleton className="h-4 w-16 rounded" />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-3 w-28" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-28 rounded-md" />
+                    <Skeleton className="h-8 w-20 rounded-md" />
+                    <Skeleton className="h-8 w-20 rounded-md" />
+                  </div>
+                </div>
+              </Card>
             ))}
           </div>
         ) : providers.length === 0 ? (
@@ -220,48 +242,7 @@ export function AdminVerificationsPage() {
 
                   {/* Actions */}
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setInspectingProvider(p)}
-                      className="rounded-xl border-border/80 gap-1.5 text-xs font-semibold"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      Inspect Document
-                    </Button>
-
-                    <Button
-                      variant="default"
-                      size="sm"
-                      disabled={transitionMutation.isPending}
-                      onClick={() => handleApprove(p.id)}
-                      className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 text-xs font-semibold shadow-sm"
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                      Approve
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={transitionMutation.isPending}
-                      onClick={() => handleOpenReject(p)}
-                      className="rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 gap-1.5 text-xs font-semibold"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                      Reject
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={transitionMutation.isPending}
-                      onClick={() => handleReopen(p.id)}
-                      className="rounded-xl text-muted-foreground hover:text-foreground text-xs font-medium gap-1"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" />
-                      Reopen
-                    </Button>
+                    
                   </div>
                 </div>
               </Card>
@@ -315,13 +296,12 @@ export function AdminVerificationsPage() {
 
             <div className="my-4 space-y-4">
               <div className="rounded-xl bg-amber-50/70 border border-amber-200/80 p-3 text-xs text-amber-800">
-                <span className="font-semibold">Security Protocol (spec §3.2, §6.6):</span> ID documents reside in private storage. Signed URL is generated on-demand with 120s TTL and logged to audit trail.
+                <span className="font-semibold">Confidential Document:</span> ID documents are securely stored and accessible only to authorized administrators during verification. Access is temporary and audit-logged.
               </div>
 
               {docLoading ? (
-                <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-slate-50">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  <span className="text-xs text-muted-foreground">Fetching secure signed URL...</span>
+                <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-muted/20">
+                  <Spinner size="md" label="Loading document..." />
                 </div>
               ) : docError ? (
                 <div className="flex h-48 flex-col items-center justify-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-center">
@@ -425,7 +405,7 @@ export function AdminVerificationsPage() {
                 autoFocus
               />
               <p className="text-[11px] text-muted-foreground">
-                Per Invariant #3: Rejecting verification sets provider isActive to false and closes listing.
+                Note: Rejecting a provider will deactivate their listing and hide their profile from the public directory.
               </p>
             </div>
 

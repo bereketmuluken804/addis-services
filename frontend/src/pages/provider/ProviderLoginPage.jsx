@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ShieldCheck, Phone, Lock, AlertCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/authStore';
-import { api } from '@/lib/api-client';
+import { api, setAccessToken } from '@/lib/api-client';
 
 export function ProviderLoginPage() {
   const navigate = useNavigate();
@@ -67,10 +68,14 @@ export function ProviderLoginPage() {
     setChangePasswordLoading(true);
 
     try {
-      await api.patch('/api/provider/me/password', {
+      const res = await api.patch('/api/provider/me/password', {
         currentPassword: password,
         newPassword,
       });
+      const newToken = res?.data?.accessToken || res?.accessToken;
+      if (newToken) {
+        setAccessToken(newToken);
+      }
       navigate('/provider/dashboard');
     } catch (err) {
       setError(err.message || 'Failed to update password.');
@@ -80,24 +85,26 @@ export function ProviderLoginPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-20 max-w-md">
-      <div className="mb-8 text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-glow-primary mb-4">
-          <ShieldCheck className="h-7 w-7" />
-        </div>
-        <h1 className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
+    <div className="container mx-auto px-4 py-16 max-w-md">
+      <div className="mb-6 text-center">
+        <img
+          src="/logo.png"
+          alt="Addis Services Logo"
+          className="mx-auto h-20 w-20 object-contain rounded-lg mb-3 shadow-xs"
+        />
+        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
           {mustChangePassword ? 'Create New Password' : 'Provider Sign In'}
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-1 text-xs text-muted-foreground">
           {mustChangePassword
             ? 'Your password was reset by an admin. Please set your new secure password.'
             : 'Access your profile, availability, and customer call metrics.'}
         </p>
       </div>
 
-      <Card className="p-8 sm:p-9 border-border/80 shadow-subtle">
+      <Card className="p-6 sm:p-8 border-border shadow-subtle">
         {error && (
-          <div className="mb-6 flex items-start space-x-2.5 rounded-xl border border-destructive/20 bg-destructive/5 p-3.5 text-xs font-semibold text-destructive">
+          <div className="mb-5 flex items-start space-x-2 rounded-md border border-destructive/20 bg-destructive/5 p-3 text-xs font-semibold text-destructive">
             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
@@ -106,7 +113,7 @@ export function ProviderLoginPage() {
         {mustChangePassword ? (
           <form onSubmit={handlePasswordChangeSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <label className="text-xs font-semibold text-foreground/80">
                 New Secure Password
               </label>
               <Input
@@ -115,12 +122,12 @@ export function ProviderLoginPage() {
                 placeholder="At least 8 characters"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="h-12 rounded-xl"
+                className="h-10 text-xs"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <label className="text-xs font-semibold text-foreground/80">
                 Confirm New Password
               </label>
               <Input
@@ -129,22 +136,29 @@ export function ProviderLoginPage() {
                 placeholder="Repeat new password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="h-12 rounded-xl"
+                className="h-10 text-xs"
               />
             </div>
 
             <Button
               type="submit"
               disabled={changePasswordLoading}
-              className="w-full h-12 rounded-xl font-bold mt-2 shadow-sm"
+              className="w-full h-10 font-semibold text-xs mt-2 shadow-subtle"
             >
-              {changePasswordLoading ? 'Updating Password...' : 'Save Password & Enter Dashboard'}
+              {changePasswordLoading ? (
+                <span className="flex items-center justify-center">
+                  <Spinner size="xs" className="mr-1.5 border-white border-t-transparent text-white" />
+                  Updating Password...
+                </span>
+              ) : (
+                'Save Password & Enter Dashboard'
+              )}
             </Button>
           </form>
         ) : (
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <label className="text-xs font-semibold text-foreground/80">
                 Registered Phone Number
               </label>
               <Input
@@ -152,12 +166,12 @@ export function ProviderLoginPage() {
                 placeholder="0911223344 or +251911223344"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="h-12 rounded-xl"
+                className="h-10 text-xs"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <label className="text-xs font-semibold text-foreground/80">
                 Password
               </label>
               <Input
@@ -166,23 +180,30 @@ export function ProviderLoginPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-12 rounded-xl"
+                className="h-10 text-xs"
               />
             </div>
 
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-xl font-bold mt-2 shadow-sm"
+              className="w-full h-10 font-semibold text-xs mt-2 shadow-subtle"
             >
-              {loading ? 'Signing in...' : 'Sign In to Dashboard'}
+              {loading ? (
+                <span className="flex items-center justify-center">
+                  <Spinner size="xs" className="mr-1.5 border-white border-t-transparent text-white" />
+                  Signing In...
+                </span>
+              ) : (
+                'Sign In to Dashboard'
+              )}
             </Button>
           </form>
         )}
 
-        <div className="mt-8 border-t border-border pt-6 text-center text-xs text-muted-foreground">
+        <div className="mt-6 border-t border-border pt-4 text-center text-xs text-muted-foreground">
           Don't have a provider account yet?{' '}
-          <Link to="/provider/register" className="font-bold text-primary hover:underline">
+          <Link to="/provider/register" className="font-semibold text-primary hover:underline">
             Register as a Pro
           </Link>
         </div>

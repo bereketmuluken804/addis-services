@@ -15,6 +15,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -129,24 +130,24 @@ export function ProviderRegisterPage() {
 
   if (success) {
     return (
-      <div className="container mx-auto px-4 py-24 max-w-lg text-center">
-        <Card className="p-10 border-border/80 shadow-card">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-50 text-emerald-600 mb-6">
-            <CheckCircle2 className="h-10 w-10" />
+      <div className="container mx-auto px-4 py-20 max-w-lg text-center">
+        <Card className="p-8 sm:p-10 border-border shadow-card">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 mb-5">
+            <CheckCircle2 className="h-8 w-8" />
           </div>
-          <h2 className="font-heading text-3xl font-bold tracking-tight text-foreground">
+          <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground">
             Application Received!
           </h2>
-          <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+          <p className="mt-3 text-xs sm:text-sm text-muted-foreground leading-relaxed">
             Thank you, <strong>{fullName}</strong>. Your provider application and identity document have been submitted to the Addis Services admin team for review.
           </p>
-          <div className="mt-6 rounded-2xl bg-muted/60 p-4 text-xs text-muted-foreground text-left space-y-2">
+          <div className="mt-5 rounded-md bg-muted/60 p-4 text-xs text-muted-foreground text-left space-y-1.5 border border-border">
             <p className="font-semibold text-foreground">What happens next?</p>
             <p>1. Our team reviews your ID credentials within 24 hours.</p>
             <p>2. Once verified, your status will become <strong>APPROVED</strong> and your profile goes live.</p>
           </div>
-          <Link to="/provider/login" className="mt-8 block">
-            <Button size="lg" className="w-full h-12 rounded-xl font-bold">
+          <Link to="/provider/login" className="mt-6 block">
+            <Button size="lg" className="w-full h-11 rounded-md font-semibold text-xs shadow-subtle">
               Sign In to Your Pro Dashboard
             </Button>
           </Link>
@@ -156,29 +157,31 @@ export function ProviderRegisterPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-16 max-w-xl">
-      <div className="mb-10 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-glow-primary mb-4">
-          <ShieldCheck className="h-6 w-6" />
-        </div>
-        <h1 className="font-heading text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+    <div className="container mx-auto px-4 py-12 max-w-xl">
+      <div className="mb-8 text-center">
+        <img
+          src="/logo.png"
+          alt="Addis Services Logo"
+          className="mx-auto h-20 w-20 object-contain rounded-lg mb-3 shadow-xs"
+        />
+        <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
           Join Addis Services as a Pro
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-1 text-xs text-muted-foreground">
           Step {step} of 3: {step === 1 ? 'Credentials' : step === 2 ? 'Your Trade & Area' : 'ID Document Verification'}
         </p>
 
         {/* Progress Bar */}
-        <div className="mx-auto mt-6 flex max-w-xs items-center gap-2">
-          <div className={`h-2 flex-1 rounded-full transition-colors ${step >= 1 ? 'bg-primary' : 'bg-muted'}`} />
-          <div className={`h-2 flex-1 rounded-full transition-colors ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
-          <div className={`h-2 flex-1 rounded-full transition-colors ${step >= 3 ? 'bg-primary' : 'bg-muted'}`} />
+        <div className="mx-auto mt-4 flex max-w-xs items-center gap-2">
+          <div className={`h-1.5 flex-1 rounded-sm transition-colors ${step >= 1 ? 'bg-primary' : 'bg-muted'}`} />
+          <div className={`h-1.5 flex-1 rounded-sm transition-colors ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
+          <div className={`h-1.5 flex-1 rounded-sm transition-colors ${step >= 3 ? 'bg-primary' : 'bg-muted'}`} />
         </div>
       </div>
 
-      <Card className="p-8 sm:p-10 border-border/80 shadow-subtle">
+      <Card className="p-6 sm:p-8 border-border shadow-subtle">
         {error && (
-          <div className="mb-6 flex items-start space-x-2.5 rounded-xl border border-destructive/20 bg-destructive/5 p-3.5 text-xs font-semibold text-destructive">
+          <div className="mb-5 flex items-start space-x-2 rounded-md border border-destructive/20 bg-destructive/5 p-3 text-xs font-semibold text-destructive">
             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
@@ -187,9 +190,9 @@ export function ProviderRegisterPage() {
         <form onSubmit={step === 3 ? handleSubmit : (e) => { e.preventDefault(); handleNext(); }}>
           {/* Step 1: Credentials */}
           {step === 1 && (
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <label className="text-xs font-semibold text-foreground/80">
                   Full Name
                 </label>
                 <Input
@@ -197,12 +200,12 @@ export function ProviderRegisterPage() {
                   placeholder="e.g. Abebe Tola"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="h-12 rounded-xl"
+                  className="h-10 text-xs"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <label className="text-xs font-semibold text-foreground/80">
                   Phone Number (Ethiopia)
                 </label>
                 <Input
@@ -210,7 +213,7 @@ export function ProviderRegisterPage() {
                   placeholder="0911223344 or +251911223344"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="h-12 rounded-xl"
+                  className="h-10 text-xs"
                 />
                 <p className="text-[11px] text-muted-foreground">
                   Customers will call this number directly for job bookings.
@@ -218,7 +221,7 @@ export function ProviderRegisterPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <label className="text-xs font-semibold text-foreground/80">
                   Create Password
                 </label>
                 <Input
@@ -227,14 +230,14 @@ export function ProviderRegisterPage() {
                   placeholder="At least 8 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 rounded-xl"
+                  className="h-10 text-xs"
                 />
               </div>
 
-              <div className="pt-4">
-                <Button type="submit" className="w-full h-12 rounded-xl font-bold justify-between">
+              <div className="pt-3">
+                <Button type="submit" className="w-full h-10 rounded-md font-semibold text-xs justify-between shadow-subtle">
                   <span>Continue to Trade Details</span>
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
@@ -242,16 +245,16 @@ export function ProviderRegisterPage() {
 
           {/* Step 2: Trade & Area */}
           {step === 2 && (
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <label className="text-xs font-semibold text-foreground/80">
                   Primary Trade / Category
                 </label>
                 <select
                   required
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
-                  className="flex h-12 w-full rounded-xl border border-input bg-card px-3.5 text-sm font-medium outline-none cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="flex h-10 w-full rounded-md border border-input bg-card px-3 text-xs font-medium outline-none cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary"
                 >
                   <option value="">Select your service category...</option>
                   {categories.map((cat) => (
@@ -264,14 +267,14 @@ export function ProviderRegisterPage() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <label className="text-xs font-semibold text-foreground/80">
                     Sub-city (Addis Ababa)
                   </label>
                   <select
                     required
                     value={subCityId}
                     onChange={(e) => setSubCityId(e.target.value)}
-                    className="flex h-12 w-full rounded-xl border border-input bg-card px-3.5 text-sm font-medium outline-none cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary"
+                    className="flex h-10 w-full rounded-md border border-input bg-card px-3 text-xs font-medium outline-none cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary"
                   >
                     <option value="">Select sub-city...</option>
                     {subCities.map((sub) => (
@@ -283,20 +286,20 @@ export function ProviderRegisterPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <label className="text-xs font-semibold text-foreground/80">
                     Woreda (Optional)
                   </label>
                   <Input
                     placeholder="e.g. 03"
                     value={woreda}
                     onChange={(e) => setWoreda(e.target.value)}
-                    className="h-12 rounded-xl"
+                    className="h-10 text-xs"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <label className="text-xs font-semibold text-foreground/80">
                   Years of Experience
                 </label>
                 <Input
@@ -305,12 +308,12 @@ export function ProviderRegisterPage() {
                   max="50"
                   value={experienceYears}
                   onChange={(e) => setExperienceYears(e.target.value)}
-                  className="h-12 rounded-xl"
+                  className="h-10 text-xs"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <label className="text-xs font-semibold text-foreground/80">
                   Short Professional Bio
                 </label>
                 <textarea
@@ -318,22 +321,22 @@ export function ProviderRegisterPage() {
                   placeholder="Describe your skills, tools, and specialties (e.g. expert pipe fittings, emergency leak repair)..."
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  className="w-full rounded-xl border border-input bg-card p-3.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-md border border-input bg-card p-3 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary leading-relaxed"
                 />
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-2.5 pt-3">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setStep(1)}
-                  className="h-12 rounded-xl font-semibold px-5"
+                  className="h-10 rounded-md font-semibold text-xs px-4"
                 >
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                  <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back
                 </Button>
-                <Button type="submit" className="flex-1 h-12 rounded-xl font-bold justify-between">
+                <Button type="submit" className="flex-1 h-10 rounded-md font-semibold text-xs justify-between shadow-subtle">
                   <span>Continue to ID Verification</span>
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
@@ -341,35 +344,35 @@ export function ProviderRegisterPage() {
 
           {/* Step 3: National ID Verification */}
           {step === 3 && (
-            <div className="space-y-6">
-              <div className="rounded-2xl bg-primary-light/50 border border-primary/20 p-4 text-xs text-foreground/80 space-y-1.5">
-                <p className="font-bold text-primary flex items-center">
+            <div className="space-y-5">
+              <div className="rounded-md bg-primary-light/50 border border-primary/20 p-3.5 text-xs text-foreground/80 space-y-1">
+                <p className="font-semibold text-primary flex items-center">
                   <ShieldCheck className="mr-1.5 h-4 w-4" />
                   Private & Confidential Verification
                 </p>
                 <p>
-                  To protect households in Addis Ababa, all providers must upload a clear photo of their Kebele ID, Resident ID, or Passport. This file is stored in a private encrypted vault and never shown publicly.
+                  To protect households in Addis Ababa, all providers must upload a clear photo of their Kebele ID, Resident ID, or Passport. This file is kept strictly confidential, securely stored, and never displayed publicly.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <label className="text-xs font-semibold text-foreground/80">
                   Upload Government ID Photo
                 </label>
 
-                <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/90 p-8 text-center transition-colors hover:border-primary/50 bg-card">
+                <div className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-border p-6 text-center transition-colors hover:border-primary/50 bg-card">
                   {idFilePreview ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                       <img
                         src={idFilePreview}
                         alt="ID preview"
-                        className="mx-auto h-36 w-auto rounded-xl object-cover shadow-sm border border-border"
+                        className="mx-auto h-32 w-auto rounded-md object-cover shadow-xs border border-border"
                       />
                       <p className="text-xs font-semibold text-emerald-600 flex items-center justify-center">
-                        <CheckCircle2 className="mr-1 h-4 w-4" />
+                        <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
                         {idFile.name} ({(idFile.size / (1024 * 1024)).toFixed(2)} MB)
                       </p>
-                      <label className="inline-block cursor-pointer text-xs font-bold text-primary underline">
+                      <label className="inline-block cursor-pointer text-xs font-semibold text-primary underline">
                         Change photo
                         <input
                           type="file"
@@ -380,16 +383,16 @@ export function ProviderRegisterPage() {
                       </label>
                     </div>
                   ) : (
-                    <label className="cursor-pointer space-y-3 flex flex-col items-center">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-                        <UploadCloud className="h-6 w-6" />
+                    <label className="cursor-pointer space-y-2 flex flex-col items-center">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                        <UploadCloud className="h-5 w-5" />
                       </div>
                       <div>
-                        <span className="text-sm font-bold text-primary hover:underline">
+                        <span className="text-xs font-semibold text-primary hover:underline">
                           Click to select ID photo
                         </span>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          JPEG or PNG (Max 10 MB)
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          JPEG, PNG, or WebP (Max 10 MB)
                         </p>
                       </div>
                       <input
@@ -403,31 +406,38 @@ export function ProviderRegisterPage() {
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-2.5 pt-3">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setStep(2)}
                   disabled={loading}
-                  className="h-12 rounded-xl font-semibold px-5"
+                  className="h-10 rounded-md font-semibold text-xs px-4"
                 >
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                  <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back
                 </Button>
                 <Button
                   type="submit"
                   disabled={loading || !idFile}
-                  className="flex-1 h-12 rounded-xl font-bold shadow-md hover:shadow-lg"
+                  className="flex-1 h-10 rounded-md font-semibold text-xs shadow-subtle"
                 >
-                  {loading ? 'Submitting Application...' : 'Complete & Submit Application'}
+                  {loading ? (
+                    <span className="flex items-center justify-center">
+                      <Spinner size="xs" className="mr-1.5 border-white border-t-transparent text-white" />
+                      Submitting Application...
+                    </span>
+                  ) : (
+                    'Complete & Submit Application'
+                  )}
                 </Button>
               </div>
             </div>
           )}
         </form>
 
-        <div className="mt-8 border-t border-border pt-6 text-center text-xs text-muted-foreground">
+        <div className="mt-6 border-t border-border pt-4 text-center text-xs text-muted-foreground">
           Already have a provider account?{' '}
-          <Link to="/provider/login" className="font-bold text-primary hover:underline">
+          <Link to="/provider/login" className="font-semibold text-primary hover:underline">
             Sign In here
           </Link>
         </div>

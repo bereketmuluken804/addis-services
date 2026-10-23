@@ -15,27 +15,28 @@ import {
   Menu,
   X,
   ExternalLink,
+  Layers,
 } from 'lucide-react';
 
 export function AdminLayout({ children }) {
-  const { user, isAuthenticated, isInitializing, logout } = useAuthStore();
+  const { user, isAuthenticated, isLoading, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const { data: stats } = useAdminStats();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   React.useEffect(() => {
-    if (!isInitializing && (!isAuthenticated || user?.role !== 'ADMIN')) {
+    if (!isLoading && (!isAuthenticated || user?.role !== 'ADMIN')) {
       navigate('/admin/login', { replace: true, state: { from: location.pathname } });
     }
-  }, [isAuthenticated, isInitializing, user, navigate, location.pathname]);
+  }, [isAuthenticated, isLoading, user, navigate, location.pathname]);
 
-  if (isInitializing || !isAuthenticated || user?.role !== 'ADMIN') {
+  if (isLoading || !isAuthenticated || user?.role !== 'ADMIN') {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="text-sm font-medium text-muted-foreground">Authenticating admin session...</p>
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-xs font-medium text-muted-foreground">Authenticating admin session...</p>
         </div>
       </div>
     );
@@ -63,7 +64,7 @@ export function AdminLayout({ children }) {
     },
     {
       to: '/admin/providers',
-      label: 'Providers',
+      label: 'Provider Directory',
       icon: Users,
     },
     {
@@ -73,47 +74,52 @@ export function AdminLayout({ children }) {
     },
     {
       to: '/admin/reviews',
-      label: 'Reviews',
+      label: 'Review Moderation',
       icon: MessageSquare,
+    },
+    {
+      to: '/admin/reference-data',
+      label: 'Categories & Locations',
+      icon: Layers,
     },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-16">
+    <div className="min-h-screen bg-muted/20 pb-16">
       {/* Top Admin Notice Bar */}
-      <div className="border-b border-border/60 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+      <div className="border-b border-border bg-card">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted lg:hidden"
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-muted lg:hidden"
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <ShieldAlert className="h-4 w-4" />
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-subtle">
+                <ShieldAlert className="h-3.5 w-3.5" />
               </div>
-              <span className="font-heading text-base font-bold tracking-tight text-foreground">
-                Admin Console
+              <span className="font-heading text-sm font-bold tracking-tight text-foreground">
+                Administration Console
               </span>
             </div>
-            <Badge variant="outline" className="hidden sm:inline-flex border-primary/20 bg-primary/5 text-xs text-primary font-medium">
+            <span className="hidden sm:inline-flex rounded border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
               Internal Ops
-            </Badge>
+            </span>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex flex-col text-right">
               <span className="text-xs font-semibold text-foreground">{user?.email}</span>
-              <span className="text-[11px] text-muted-foreground capitalize">{user?.role}</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{user?.role}</span>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="text-muted-foreground hover:text-destructive gap-1.5 text-xs font-medium rounded-lg"
+              className="text-muted-foreground hover:text-destructive gap-1 text-xs font-medium h-8 px-2.5 rounded-md"
             >
               <LogOut className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Logout</span>
@@ -122,12 +128,12 @@ export function AdminLayout({ children }) {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
           {/* Sidebar Navigation */}
           <aside className={`lg:col-span-1 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
-            <nav className="flex flex-col gap-1.5 rounded-2xl border border-border/60 bg-white p-3 shadow-sm">
-              <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            <nav className="flex flex-col gap-1 rounded-lg border border-border bg-card p-2.5 shadow-subtle">
+              <div className="px-2.5 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 Management
               </div>
               {navItems.map((item) => {
@@ -138,19 +144,19 @@ export function AdminLayout({ children }) {
                     key={item.to}
                     to={item.to}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all ${
+                    className={`flex items-center justify-between rounded-md px-2.5 py-2 text-xs font-medium transition-colors ${
                       isActive
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:bg-slate-100 hover:text-foreground'
+                        ? 'bg-primary text-primary-foreground shadow-subtle'
+                        : 'text-foreground/80 hover:bg-muted hover:text-foreground'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <Icon className={`h-4 w-4 ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
+                    <div className="flex items-center gap-2.5">
+                      <Icon className={`h-3.5 w-3.5 ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
                       <span>{item.label}</span>
                     </div>
                     {item.badge && (
                       <span
-                        className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-bold ${
+                        className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
                           isActive ? 'bg-white text-primary' : item.badgeColor
                         }`}
                       >
@@ -161,13 +167,13 @@ export function AdminLayout({ children }) {
                 );
               })}
 
-              <div className="my-2 border-t border-border/40" />
+              <div className="my-1.5 border-t border-border" />
 
               <a
                 href="/providers"
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center justify-between rounded-xl px-3.5 py-2 text-xs font-medium text-muted-foreground hover:bg-slate-100 hover:text-foreground"
+                className="flex items-center justify-between rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <span className="flex items-center gap-2">
                   <ExternalLink className="h-3.5 w-3.5" />
