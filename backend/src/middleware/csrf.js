@@ -14,7 +14,30 @@ export function csrfProtection(req, res, next) {
   }
 
   const allowedOrigins = env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean);
-  if (!allowedOrigins.includes(origin) && !allowedOrigins.includes('*')) {
+  let isAllowed = allowedOrigins.includes('*') || allowedOrigins.includes(origin);
+
+  // Same-origin check: requests originating from the same host
+  if (!isAllowed && req.headers?.host) {
+    try {
+      const parsed = new URL(origin);
+      if (parsed.host === req.headers.host) {
+        isAllowed = true;
+      }
+    } catch {}
+  }
+
+  // Render external URL check
+  if (!isAllowed && process.env.RENDER_EXTERNAL_URL) {
+    try {
+      const renderHost = new URL(process.env.RENDER_EXTERNAL_URL).host;
+      const parsed = new URL(origin);
+      if (parsed.host === renderHost) {
+        isAllowed = true;
+      }
+    } catch {}
+  }
+
+  if (!isAllowed) {
     return next(new AppError(403, 'CSRF_ERROR', 'Forbidden origin'));
   }
 
