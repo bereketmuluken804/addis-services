@@ -1,4 +1,4 @@
-import { eq, and, sql, count, asc, desc } from 'drizzle-orm';
+import { eq, and, or, ilike, sql, count, asc, desc } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import * as schema from '../../db/schema.js';
 import { AppError } from '../../middleware/errorHandler.js';
@@ -63,6 +63,8 @@ export class PublicService {
     cityId,
     subCityId,
     availableOnly = false,
+    search,
+    sortBy,
     page = 1,
     limit = 20,
   }) {
@@ -75,11 +77,20 @@ export class PublicService {
     if (cityId) conditions.push(eq(schema.providers.cityId, cityId));
     if (subCityId) conditions.push(eq(schema.providers.subCityId, subCityId));
     if (availableOnly) conditions.push(eq(schema.providers.isAvailable, true));
+    if (search) {
+      const searchPattern = `%${search}%`;
+      conditions.push(
+        or(
+          ilike(schema.providers.fullName, searchPattern),
+          ilike(schema.providers.bio, searchPattern)
+        )
+      );
+    }
 
     const whereClause = and(...conditions);
 
     // Explicit projection of public columns (Invariant #8)
-    const providerRows = await db
+    let query = db
       .select({
         id: schema.providers.id,
         fullName: schema.providers.fullName,
@@ -127,9 +138,21 @@ export class PublicService {
         schema.categories.id,
         schema.cities.id,
         schema.subCities.id
-      )
-      .limit(limit)
-      .offset(offset);
+      );
+
+    if (sortBy === 'reviews') {
+      query = query.orderBy(
+        desc(sql`COUNT(CASE WHEN ${schema.providerReviews.status} = 'PUBLISHED' THEN 1 END)`),
+        desc(schema.providers.id)
+      );
+    } else if (sortBy === 'rating') {
+      query = query.orderBy(
+        desc(sql`COALESCE(AVG(CASE WHEN ${schema.providerReviews.status} = 'PUBLISHED' THEN ${schema.providerReviews.rating} END), 0)`),
+        desc(schema.providers.id)
+      );
+    }
+
+    const providerRows = await query.limit(limit).offset(offset);
 
     const [{ totalCount }] = await db
       .select({ totalCount: count() })
@@ -248,7 +271,7 @@ export class PublicService {
   /**
    * Public paginated list of published reviews for an eligible provider (spec §6.3)
    */
-  static async getProviderReviews({ providerId, page = 1, limit = 20 }) {
+  static async getProviderReviews({ providerId, page = 1, limit = 20, currentUserId = null }) {
     // 1. Invariant #1: provider must be eligible
     const [provider] = await db
       .select({ id: schema.providers.id })
@@ -269,6 +292,7 @@ export class PublicService {
         comment: schema.providerReviews.comment,
         createdAt: schema.providerReviews.createdAt,
         reviewerName: schema.customerUsers.fullName,
+        customerId: schema.providerReviews.customerId,
       })
       .from(schema.providerReviews)
       .innerJoin(
@@ -297,8 +321,17 @@ export class PublicService {
 
     const totalCount = Number(total);
 
+    const formattedReviews = reviews.map((r) => ({
+      id: r.id,
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt,
+      reviewerName: r.reviewerName,
+      isOwner: Boolean(currentUserId && r.customerId === currentUserId),
+    }));
+
     return {
-      data: reviews,
+      data: formattedReviews,
       pagination: {
         page,
         limit,

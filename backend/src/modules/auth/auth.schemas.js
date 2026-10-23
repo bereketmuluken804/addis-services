@@ -31,7 +31,7 @@ export const providerRegisterSchema = z.object({
   woreda: z.string().trim().max(50).optional(),
   bio: z.string().trim().max(1000).optional(),
   experienceYears: z.coerce.number().int().min(0).max(60).optional(),
-  avatarUrl: z.string().url().max(2048).optional(),
+  avatarUrl: z.string().trim().max(2048).optional(),
   workSamples: z
     .union([z.string(), z.array(z.string().url().max(2048))])
     .optional()

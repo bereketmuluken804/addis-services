@@ -1,16 +1,17 @@
 {
-  "name": "domestic-services-platform",
-  "version": "1.0.0",
-  "private": true,
-  "workspaces": [
-    "backend",
-    "frontend"
-  ],
-  "scripts": {
-    "dev:backend": "npm --prefix backend run dev",
-    "start:backend": "npm --prefix backend start",
-    "test:backend": "npm --prefix backend test",
-    "lint:backend": "npm --prefix backend run lint",
-    "smoke:backend": "npm --prefix backend run smoke"
-  }
+	"name": "domestic-services-platform",
+	"version": "1.0.0",
+	"private": true,
+	"workspaces": [
+		"backend",
+		"frontend"
+	],
+	"scripts": {
+		"dev:backend": "npm --prefix backend run dev",
+		"dev:frontend": "npm --prefix frontend run dev",
+		"start:backend": "npm --prefix backend start",
+		"test:backend": "npm --prefix backend test",
+		"lint:backend": "npm --prefix backend run lint",
+		"smoke:backend": "npm --prefix backend run smoke"
+	}
 }

@@ -53,4 +53,16 @@ export class S3StorageAdapter {
     });
     return await getSignedUrl(this.s3, command, { expiresIn: expiresInSeconds });
   }
+
+  async getObject(key) {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+    });
+    const response = await this.s3.send(command);
+    return {
+      stream: response.Body,
+      contentType: response.ContentType,
+    };
+  }
 }

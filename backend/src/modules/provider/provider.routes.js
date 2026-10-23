@@ -9,7 +9,7 @@ import {
 import { validate } from '../../middleware/validate.js';
 import { authenticate } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/requireRole.js';
-import { uploadIdDocument } from '../../middleware/upload.js';
+import { uploadIdDocument, uploadAvatar } from '../../middleware/upload.js';
 import { enforceMustChangePassword } from '../../middleware/mustChangePassword.js';
 import {
   documentUploadRateLimiter,
@@ -136,3 +136,18 @@ providerRouter.delete('/me/phone-change-requests/current', async (req, res, next
     next(err);
   }
 });
+
+// 9. Upload Profile Avatar
+providerRouter.post(
+  "/me/avatar",
+  documentUploadRateLimiter,
+  uploadAvatar,
+  async (req, res, next) => {
+    try {
+      const result = await ProviderService.uploadAvatar(req.user.id, req.file);
+      res.status(200).json({ data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+);

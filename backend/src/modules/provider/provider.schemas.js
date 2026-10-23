@@ -6,10 +6,10 @@ export const updateProfileSchema = z
     cityId: z.coerce.number().int().positive().optional(),
     subCityId: z.coerce.number().int().positive().optional(),
     categoryId: z.coerce.number().int().positive().optional(),
-    woreda: z.string().trim().max(50).optional(),
-    bio: z.string().trim().max(1000).optional(),
-    experienceYears: z.coerce.number().int().min(0).max(60).optional(),
-    avatarUrl: z.string().url().max(2048).optional(),
+    woreda: z.string().trim().max(50).nullable().optional(),
+    bio: z.string().trim().max(1000).nullable().optional(),
+    experienceYears: z.coerce.number().int().min(0).max(60).nullable().optional(),
+    avatarUrl: z.string().trim().max(2048).nullable().optional(),
     workSamples: z.array(z.string().url().max(2048)).max(6).optional(),
   })
   .strict(); // Rejects unknown fields (no mass assignment!)

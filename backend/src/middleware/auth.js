@@ -26,3 +26,26 @@ export function authenticate(req, res, next) {
     return next(new AppError(401, 'INVALID_TOKEN', 'Invalid or malformed authentication token'));
   }
 }
+
+export function optionalAuthenticate(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+
+  const token = authHeader.slice(7).trim();
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const payload = verifyAccessToken(token);
+    req.user = {
+      id: Number(payload.sub),
+      role: payload.role,
+    };
+  } catch (_err) {
+    // Optional auth silently ignores expired or invalid tokens
+  }
+  next();
+}

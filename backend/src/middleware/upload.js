@@ -88,3 +88,33 @@ export const uploadIdDocument = [
     next();
   },
 ];
+
+/**
+ * Middleware handling provider avatar image upload and validating magic bytes.
+ */
+export const uploadAvatar = [
+  upload.single('avatar'),
+  (req, res, next) => {
+    if (!req.file) {
+      return next(
+        new AppError(400, 'VALIDATION_ERROR', 'Avatar image file (avatar) is required')
+      );
+    }
+
+    const detected = sniffImageMagicBytes(req.file.buffer);
+    if (!detected) {
+      return next(
+        new AppError(
+          415,
+          'UNSUPPORTED_MEDIA_TYPE',
+          'Only JPEG, PNG, and WebP image formats are accepted'
+        )
+      );
+    }
+
+    req.file.verifiedMime = detected.mime;
+    req.file.verifiedExt = detected.ext;
+
+    next();
+  },
+];

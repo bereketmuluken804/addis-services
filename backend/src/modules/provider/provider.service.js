@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { eq, and, count, isNull, desc } from 'drizzle-orm';
+import { eq, and, count, isNull, desc, sql } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import * as schema from '../../db/schema.js';
 import { AppError } from '../../middleware/errorHandler.js';
@@ -13,18 +13,19 @@ export class ProviderService {
    * Get provider profile with stats (calls received).
    */
   static async getProfile(providerId, cachedProvider = null) {
-    const provider =
-      cachedProvider ||
-      (
-        await db
-          .select()
-          .from(schema.providers)
-          .where(eq(schema.providers.id, providerId))
-          .limit(1)
-      )[0];
+    let provider = cachedProvider && cachedProvider.fullName ? cachedProvider : null;
 
     if (!provider) {
-      throw new AppError(404, 'NOT_FOUND', 'Provider not found');
+      const [row] = await db
+        .select()
+        .from(schema.providers)
+        .where(eq(schema.providers.id, providerId))
+        .limit(1);
+      provider = row;
+    }
+
+    if (!provider) {
+      throw new AppError(404, "NOT_FOUND", "Provider not found");
     }
 
     // Core metric: call-click events recorded
@@ -33,11 +34,35 @@ export class ProviderService {
       .from(schema.callLogs)
       .where(eq(schema.callLogs.providerId, providerId));
 
+    let category = null;
+    if (provider.categoryId) {
+      const [cat] = await db
+        .select({ id: schema.categories.id, nameEn: schema.categories.nameEn, nameAm: schema.categories.nameAm })
+        .from(schema.categories)
+        .where(eq(schema.categories.id, provider.categoryId))
+        .limit(1);
+      category = cat || null;
+    }
+
+    let subCity = null;
+    if (provider.subCityId) {
+      const [sc] = await db
+        .select({ id: schema.subCities.id, nameEn: schema.subCities.nameEn, nameAm: schema.subCities.nameAm })
+        .from(schema.subCities)
+        .where(eq(schema.subCities.id, provider.subCityId))
+        .limit(1);
+      subCity = sc || null;
+    }
+
     const { passwordHash: _hash, ...safeProvider } = provider;
 
     return {
       ...safeProvider,
-      totalCallsReceived: Number(totalCalls),
+      category,
+      categoryName: category?.nameEn,
+      subCity,
+      subCityName: subCity?.nameEn,
+      totalCallsReceived: Number(totalCalls || 0),
     };
   }
 
@@ -434,5 +459,49 @@ export class ProviderService {
       .where(eq(schema.phoneChangeRequests.id, pendingRequest.id));
 
     return { message: 'Phone change request cancelled successfully' };
+  }
+
+  /**
+   * Upload provider profile avatar image and update profile avatarUrl.
+   */
+  static async uploadAvatar(providerId, file) {
+    const storage = getStorage();
+
+    const [provider] = await db
+      .select({ id: schema.providers.id })
+      .from(schema.providers)
+      .where(eq(schema.providers.id, providerId))
+      .limit(1);
+
+    if (!provider) {
+      throw new AppError(404, "NOT_FOUND", "Provider not found");
+    }
+
+    const filename = `${providerId}-${crypto.randomUUID()}.${file.verifiedExt || "jpg"}`;
+    const objectKey = `avatars/${filename}`;
+
+    await storage.upload({
+      key: objectKey,
+      buffer: file.buffer,
+      contentType: file.verifiedMime || "image/jpeg",
+    });
+
+    const avatarUrl = `/api/avatars/${filename}`;
+
+    const [updated] = await db
+      .update(schema.providers)
+      .set({
+        avatarUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.providers.id, providerId))
+      .returning({
+        id: schema.providers.id,
+        avatarUrl: schema.providers.avatarUrl,
+      });
+
+    return {
+      avatarUrl: updated.avatarUrl,
+    };
   }
 }

@@ -116,7 +116,7 @@ export const providers = pgTable(
     suspensionReason: text('suspension_reason'),
 
     // Provider-controlled availability badge
-    isAvailable: boolean('is_available').notNull().default(false),
+    isAvailable: boolean('is_available').notNull().default(true),
 
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

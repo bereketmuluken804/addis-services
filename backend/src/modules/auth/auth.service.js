@@ -141,7 +141,7 @@ export class AuthService {
             workSamples: data.workSamples || [],
             verificationStatus: 'PENDING',
             isActive: false,
-            isAvailable: false,
+            isAvailable: true,
           })
           .returning();
 

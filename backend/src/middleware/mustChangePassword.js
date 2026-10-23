@@ -10,10 +10,7 @@ export async function enforceMustChangePassword(req, res, next) {
     }
 
     const [provider] = await db
-      .select({
-        id: schema.providers.id,
-        mustChangePassword: schema.providers.mustChangePassword,
-      })
+      .select()
       .from(schema.providers)
       .where(eq(schema.providers.id, req.user.id))
       .limit(1);

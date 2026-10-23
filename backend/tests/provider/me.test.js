@@ -48,7 +48,8 @@ describe('Provider Me & Resubmission (src/modules/provider/provider.routes.js)',
         where: () => {
           call++;
           if (call === 1) return { limit: () => Promise.resolve([validMockProvider]) };
-          return Promise.resolve([{ totalCalls: 7 }]);
+          if (call === 2) return Promise.resolve([{ totalCalls: 7 }]);
+          return { limit: () => Promise.resolve([{ id: 1, nameEn: "Plumbing", nameAm: "የቧንቧ ስራ" }]) };
         },
       }),
     }));
