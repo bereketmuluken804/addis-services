@@ -1,6 +1,9 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import { sql } from 'drizzle-orm';
 import { env } from './config/env.js';
 import { db } from './db/client.js';
@@ -19,14 +22,19 @@ export const app = express();
 app.set('trust proxy', env.TRUST_PROXY_HOPS);
 
 // Security Headers
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 
 // CORS Configuration
 const allowedOrigins = env.CORS_ORIGINS.split(',').map((o) => o.trim());
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl) or if origin is in allowlist
+      // Allow requests with no origin (like same-origin, mobile apps or curl) or if origin is in allowlist
       if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
         callback(null, true);
       } else {
@@ -62,6 +70,23 @@ app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/provider', providerRouter);
 app.use('/api/leads', leadsRouter);
+
+// Serve static assets and SPA fallback from frontend build if available
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const frontendDistPath = path.resolve(__dirname, '../../frontend/dist');
+
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+
+  // SPA fallback for non-API GET requests
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path === '/healthz') {
+      return next();
+    }
+    res.sendFile(path.join(frontendDistPath, 'index.html'));
+  });
+}
 
 // Fallback 404 handler
 app.use((req, res, next) => {

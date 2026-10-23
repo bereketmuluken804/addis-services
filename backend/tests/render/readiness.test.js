@@ -246,4 +246,29 @@ describe('Render Readiness & Deployment Verification (spec §11, §14, M8)', () 
       expect(resPublic.body.data[0].id).toBe(providerId);
     });
   });
+
+  describe('Frontend Static Asset Serving & SPA Routing', () => {
+    it('serves index.html on root GET /', async () => {
+      const res = await request(app).get('/');
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toMatch(/text\/html/);
+    });
+
+    it('serves index.html on client-side route GET /services (SPA fallback)', async () => {
+      const res = await request(app).get('/services');
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toMatch(/text\/html/);
+    });
+
+    it('returns JSON 404 for unhandled API routes GET /api/not-a-real-endpoint', async () => {
+      const res = await request(app).get('/api/not-a-real-endpoint');
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Route GET /api/not-a-real-endpoint not found',
+        },
+      });
+    });
+  });
 });

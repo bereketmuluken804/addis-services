@@ -1,11 +1,10 @@
 services:
   - type: web
-    name: domestic-services-api
-    rootDir: backend
+    name: domestic-services-platform
     runtime: node
     plan: starter
     region: oregon
-    buildCommand: npm install
+    buildCommand: npm install && npm run build
     preDeployCommand: npm run db:migrate
     startCommand: npm start
     healthCheckPath: /healthz

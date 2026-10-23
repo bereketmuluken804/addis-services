@@ -7,11 +7,19 @@
 		"frontend"
 	],
 	"scripts": {
+		"build": "npm --prefix frontend run build",
+		"start": "npm --prefix backend start",
 		"dev:backend": "npm --prefix backend run dev",
 		"dev:frontend": "npm --prefix frontend run dev",
 		"start:backend": "npm --prefix backend start",
+		"test": "npm --prefix backend test",
 		"test:backend": "npm --prefix backend test",
+		"lint": "npm --prefix backend run lint",
 		"lint:backend": "npm --prefix backend run lint",
+		"db:migrate": "npm --prefix backend run db:migrate",
+		"db:generate": "npm --prefix backend run db:generate",
+		"seed": "npm --prefix backend run seed",
+		"smoke": "npm --prefix backend run smoke",
 		"smoke:backend": "npm --prefix backend run smoke"
 	}
 }
