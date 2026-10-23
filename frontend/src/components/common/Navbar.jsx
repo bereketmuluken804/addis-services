@@ -53,8 +53,9 @@ export function Navbar() {
               Services
             </Link>
             <a
-              href="#how-it-works"
-              className="text-sm font-medium text-foreground/80 transition-colors hover:text-primary"
+              href="/#how-it-works"
+              onClick={handleHowItWorksClick}
+              className="text-sm font-medium text-foreground/80 transition-colors hover:text-primary cursor-pointer"
             >
               How It Works
             </a>
@@ -156,9 +157,9 @@ export function Navbar() {
                 Services
               </Link>
               <a
-                href="#how-it-works"
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium text-foreground hover:text-primary py-1"
+                href="/#how-it-works"
+                onClick={handleHowItWorksClick}
+                className="text-sm font-medium text-foreground hover:text-primary py-1 cursor-pointer"
               >
                 How It Works
               </a>

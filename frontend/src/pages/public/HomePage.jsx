@@ -135,7 +135,7 @@ export function HomePage() {
       </section>
 
       {/* How It Operates */}
-      <section className="border-y border-border bg-card py-14" id="how-it-works">
+      <section className="border-y border-border bg-card py-14 scroll-mt-16" id="how-it-works">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-2xl text-center mb-10">
             <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">

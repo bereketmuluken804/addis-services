@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Navbar } from '@/components/common/Navbar';
 import { Footer } from '@/components/common/Footer';
@@ -61,6 +61,34 @@ function NotFoundPage() {
   );
 }
 
+function ScrollToAnchor() {
+  const { pathname, hash } = useLocation();
+
+  useEffect(() => {
+    if (hash) {
+      const id = hash.replace('#', '');
+      let attempts = 0;
+      const maxAttempts = 20;
+
+      const tryScroll = () => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(tryScroll, 50);
+        }
+      };
+
+      tryScroll();
+    } else {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+  }, [pathname, hash]);
+
+  return null;
+}
+
 export default function App() {
   const checkSession = useAuthStore((state) => state.checkSession);
 
@@ -71,6 +99,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <ScrollToAnchor />
         <div className="flex min-h-screen flex-col bg-background font-sans text-foreground">
           <Navbar />
           <div className="flex-1">
