@@ -51,18 +51,18 @@ export function ServicesPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-5xl">
-      <div className="mx-auto max-w-2xl text-center mb-12">
-        <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+    <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-10 md:py-12 max-w-5xl">
+      <div className="mx-auto max-w-2xl text-center mb-6 sm:mb-8 md:mb-10">
+        <h1 className="font-heading text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
           Domestic Trades & Services
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+        <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl mx-auto">
           Explore our vetted trade offerings across Addis Ababa. Every listed professional has undergone National ID verification before going live.
         </p>
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i} className="flex flex-col justify-between p-6 border-border bg-card shadow-subtle">
               <div>
@@ -94,11 +94,11 @@ export function ServicesPage() {
             const Icon = detail.icon;
 
             return (
-              <Card key={cat.id} className="flex flex-col justify-between p-6 border-border bg-card shadow-subtle hover:border-primary/50 transition-colors">
+              <Card key={cat.id} className="flex flex-col justify-between p-4 sm:p-5 md:p-6 border-border bg-card shadow-subtle hover:border-primary/50 transition-all duration-200">
                 <CardHeader className="p-0">
                   <div className="flex items-center space-x-3 mb-4">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-light text-primary border border-primary/20 shrink-0">
-                      <Icon className="h-5 w-5" />
+                    <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-primary-light text-primary border border-primary/20 shrink-0">
+                      <Icon className="h-5 w-5" strokeWidth={2.5} />
                     </div>
                     <div>
                       <CardTitle className="text-lg font-bold">{cat.nameEn}</CardTitle>
@@ -129,7 +129,7 @@ export function ServicesPage() {
                     className="w-full h-9 rounded-lg text-xs font-semibold justify-between"
                   >
                     <span>View {cat.nameEn} Technicians</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
+                    <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
                   </Button>
                 </CardFooter>
               </Card>

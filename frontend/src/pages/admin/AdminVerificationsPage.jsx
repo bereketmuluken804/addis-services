@@ -241,8 +241,34 @@ export function AdminVerificationsPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    
+                  <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setInspectingProvider(p)}
+                      className="rounded-lg text-xs font-semibold gap-1.5 border-border hover:bg-muted h-9"
+                    >
+                      <Eye className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} />
+                      View ID Document
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenReject(p)}
+                      className="rounded-lg text-xs font-semibold gap-1 border-rose-200 text-rose-600 hover:bg-rose-50 h-9"
+                    >
+                      <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+                      Reject
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleApprove(p.id)}
+                      disabled={transitionMutation.isPending}
+                      className="rounded-lg text-xs font-semibold gap-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs h-9"
+                    >
+                      <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                      Approve
+                    </Button>
                   </div>
                 </div>
               </Card>
