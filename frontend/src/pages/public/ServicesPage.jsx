@@ -10,31 +10,37 @@ import { useSearchStore } from '@/stores/searchStore';
 const serviceDetails = {
   plumbing: {
     icon: Wrench,
+    actionText: 'View Plumbers',
     scope: 'Residential pipework, water storage tanks, booster pumps, geyser water heater servicing, and drainage repairs.',
     tags: ['Water Pumps', 'Geysers', 'Pipe Leaks', 'Drain Unclogging'],
   },
   electrical: {
     icon: Zap,
+    actionText: 'View Electricians',
     scope: 'Circuit breaker diagnosis, phase imbalance repairs, lighting installation, socket replacements, and safety checks.',
     tags: ['Circuit Breakers', 'Phase Faults', 'Wiring', 'Fixture Mounting'],
   },
   'satellite-dish': {
     icon: Tv,
+    actionText: 'View Dish Technicians',
     scope: 'Multi-satellite dish alignment (NSS 12, Amos, Eutelsat), receiver tuning, signal booster setup, and coaxial cabling.',
     tags: ['Dish Tuning', 'Receiver Setup', 'LNB Replacement', 'Cabling'],
   },
   'wall-painting': {
     icon: PaintBucket,
+    actionText: 'View Wall Painters',
     scope: 'Interior wall painting, weather-proof exterior coats, gypsum ceiling patches, surface smoothing, and decorative trim.',
     tags: ['Interior Painting', 'Gypsum Repair', 'Exterior Coats', 'Touch-ups'],
   },
   'appliance-repair': {
     icon: Cpu,
+    actionText: 'View Repair Technicians',
     scope: 'Diagnostics and parts replacement for refrigerators, domestic washing machines, stoves, ovens, and water purifiers.',
     tags: ['Refrigerators', 'Washing Machines', 'Ovens & Stoves', 'Motors'],
   },
   'clothes-washing': {
     icon: Shirt,
+    actionText: 'View Clothes Washing',
     scope: 'Experienced home laundry specialists for everyday garments, delicate fabrics, bed linens, curtains, and steam ironing.',
     tags: ['Domestic Laundry', 'Delicate Handwash', 'Ironing & Folding', 'Linens'],
   },
@@ -51,7 +57,7 @@ export function ServicesPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-10 md:py-12 max-w-5xl">
+    <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-10 md:py-12">
       <div className="mx-auto max-w-2xl text-center mb-6 sm:mb-8 md:mb-10">
         <h1 className="font-heading text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
           Domestic Trades & Services
@@ -62,9 +68,9 @@ export function ServicesPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i} className="flex flex-col justify-between p-6 border-border bg-card shadow-subtle">
+            <Card key={i} className="flex flex-col justify-between p-5 sm:p-6 border-border bg-card shadow-subtle">
               <div>
                 <div className="flex items-center space-x-3 mb-4">
                   <Skeleton className="h-11 w-11 rounded-lg" />
@@ -83,18 +89,18 @@ export function ServicesPage() {
                   <Skeleton className="h-5 w-14 rounded" />
                 </div>
               </div>
-              <Skeleton className="h-9 w-full rounded-lg" />
+              <Skeleton className="h-10 w-full rounded-lg" />
             </Card>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {categories.map((cat) => {
             const detail = serviceDetails[cat.slug] || serviceDetails.plumbing;
             const Icon = detail.icon;
 
             return (
-              <Card key={cat.id} className="flex flex-col justify-between p-4 sm:p-5 md:p-6 border-border bg-card shadow-subtle hover:border-primary/50 transition-all duration-200">
+              <Card key={cat.id} className="flex flex-col justify-between p-5 sm:p-6 border-border bg-card shadow-subtle hover:border-primary/50 transition-all duration-200">
                 <CardHeader className="p-0">
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-primary-light text-primary border border-primary/20 shrink-0">
@@ -122,14 +128,14 @@ export function ServicesPage() {
                   </div>
                 </CardHeader>
 
-                <CardFooter className="p-0 border-t border-border pt-4">
+                <CardFooter className="p-0 border-t border-border pt-4 mt-auto">
                   <Button
                     onClick={() => handleSelectCategory(cat.id)}
                     size="sm"
-                    className="w-full h-9 rounded-lg text-xs font-semibold justify-between"
+                    className="w-full min-h-10 h-auto py-2 px-3.5 rounded-lg text-xs sm:text-sm font-semibold justify-between gap-2"
                   >
-                    <span>View {cat.nameEn} Technicians</span>
-                    <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+                    <span>{detail.actionText || `View ${cat.nameEn}`}</span>
+                    <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2.5} />
                   </Button>
                 </CardFooter>
               </Card>
