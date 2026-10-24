@@ -1,5 +1,9 @@
 # Domestic Services Platform — Addis Ababa
 
+## Live Deployment
+- **Live Site URL:** [https://addis-services.onrender.com/](https://addis-services.onrender.com/)
+- **Health Check Endpoint:** [https://addis-services.onrender.com/healthz](https://addis-services.onrender.com/healthz)
+
 ## Student & Project Information
 - **Full Name:** Bereket Muluken Abera
 - **CTC Number:** CTC-5450-26

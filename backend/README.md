@@ -141,7 +141,7 @@ After deployment or local setup, verify the complete lifecycle end-to-end:
 npm run smoke
 
 # Against a remote staging / production deployment
-node scripts/smoke.js https://your-service.onrender.com
+node scripts/smoke.js https://addis-services.onrender.com
 ```
 
 The smoke script executes and asserts all 7 lifecycle steps:
