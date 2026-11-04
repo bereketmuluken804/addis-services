@@ -49,6 +49,38 @@ This platform solves these problems by providing an admin-verified marketplace w
 
 ---
 
+## Technologies Used
+
+### Backend Architecture & API
+- **Runtime & Framework:** [Node.js](https://nodejs.org/) (v20+, ES Modules) & [Express](https://expressjs.com/)
+- **Database & ORM:** [PostgreSQL](https://www.postgresql.org/) (hosted on [Neon](https://neon.tech/)) via `pg` connection pool with [Drizzle ORM](https://orm.drizzle.team/) & migrations managed via [Drizzle Kit](https://orm.drizzle.team/kit-docs/overview)
+- **Authentication & Security:** 
+  - [JSON Web Tokens (JWT)](https://jwt.io/) (HS256 access & rotated refresh token families)
+  - [bcrypt](https://github.com/kelektiv/node.bcrypt.js) for password hashing
+  - [Helmet](https://helmetjs.github.io/) for HTTP header security
+  - [CORS](https://github.com/expressjs/cors) & [express-rate-limit](https://github.com/express-rate-limit/express-rate-limit)
+- **Validation:** [Zod](https://zod.dev/) for strict boundary input validation and environment configuration
+- **File Uploads & Media Storage:**
+  - [Multer](https://github.com/expressjs/multer) (ephemeral memory storage)
+  - [AWS SDK for JavaScript v3](https://aws.amazon.com/sdk-for-javascript/) (`@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`) for private S3 storage & pre-signed ID document URLs
+  - [Sharp](https://sharp.pixelplumbing.com/) for server-side image processing and resizing
+- **Logging & Utilities:** [Pino](https://getpino.io/) & `pino-http` (structured JSON logging with sensitive data redaction), [node-cron](https://github.com/node-cron/node-cron)
+- **Testing & Quality:** [Vitest](https://vitest.dev/), [Supertest](https://github.com/ladjs/supertest), and [ESLint](https://eslint.org/)
+
+### Frontend Client
+- **Core Framework & Build Tool:** [React 18](https://react.dev/) & [Vite](https://vitejs.dev/)
+- **Routing & State Management:** [React Router v6](https://reactrouter.com/) & [Zustand](https://zustand-demo.pmnd.rs/)
+- **Server State & Data Fetching:** [TanStack Query v5](https://tanstack.com/query/latest)
+- **Styling & UI Components:** 
+  - [Tailwind CSS](https://tailwindcss.com/) with `tailwind-merge` & `clsx`
+  - [Radix UI Primitives](https://www.radix-ui.com/) (Accessible Dialog, Dropdown, Tabs, Toast, Avatar, Separator)
+  - [Lucide React](https://lucide.dev/) icons
+  - [Framer Motion](https://www.framer.com/motion/) for animations
+  - [Vaul](https://vaul.emilkowal.ski/) drawer primitive
+- **Forms & Client Validation:** [React Hook Form](https://react-hook-form.com/) with `@hookform/resolvers` & [Zod](https://zod.dev/)
+
+---
+
 ## Monorepo Layout
 
 ```text
