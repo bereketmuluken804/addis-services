@@ -6,6 +6,7 @@ import { AppError } from '../../middleware/errorHandler.js';
 import { hashPassword, comparePassword, dummyPasswordCompare } from '../../lib/crypto.js';
 import { signAccessToken, generateRefreshToken, hashToken } from '../../lib/tokens.js';
 import { getStorage } from '../../lib/storage/index.js';
+import { optimizeIdDocument } from '../../lib/image.js';
 import { env } from '../../config/env.js';
 
 export class AuthService {
@@ -112,12 +113,13 @@ export class AuthService {
       throw new AppError(409, 'PHONE_ALREADY_REGISTERED', 'Phone number is already registered');
     }
 
-    // 5. Upload document to private storage first
-    const objectKey = `id-docs/${crypto.randomUUID()}.${file.verifiedExt || 'jpg'}`;
+    // 5. Upload document to private storage first (with progressive compression)
+    const optimized = await optimizeIdDocument(file);
+    const objectKey = `id-docs/${crypto.randomUUID()}.${optimized.ext}`;
     await storage.upload({
       key: objectKey,
-      buffer: file.buffer,
-      contentType: file.verifiedMime || 'image/jpeg',
+      buffer: optimized.buffer,
+      contentType: optimized.contentType,
     });
 
     // 6. DB write inside transaction with orphan cleanup on failure

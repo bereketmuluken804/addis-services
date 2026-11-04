@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
-import sharp from 'sharp';
-import { eq, and, count, isNull, desc, sql } from 'drizzle-orm';
+import { optimizeIdDocument, optimizeAvatar } from '../../lib/image.js';
+import { eq, and, count, isNull, desc } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import * as schema from '../../db/schema.js';
 import { AppError } from '../../middleware/errorHandler.js';
@@ -206,12 +206,13 @@ export class ProviderService {
       );
     }
 
-    // Upload object to storage first
-    const objectKey = `id-docs/${providerId}/${crypto.randomUUID()}.${file.verifiedExt || 'jpg'}`;
+    // Upload object to storage first (with progressive compression)
+    const optimized = await optimizeIdDocument(file);
+    const objectKey = `id-docs/${providerId}/${crypto.randomUUID()}.${optimized.ext}`;
     await storage.upload({
       key: objectKey,
-      buffer: file.buffer,
-      contentType: file.verifiedMime || 'image/jpeg',
+      buffer: optimized.buffer,
+      contentType: optimized.contentType,
     });
 
     try {
@@ -478,26 +479,14 @@ export class ProviderService {
       throw new AppError(404, "NOT_FOUND", "Provider not found");
     }
 
-    const filename = `${providerId}-${crypto.randomUUID()}.${file.verifiedExt || "jpg"}`;
+    const optimized = await optimizeAvatar(file);
+    const filename = `${providerId}-${crypto.randomUUID()}.${optimized.ext}`;
     const objectKey = `avatars/${filename}`;
-
-    let uploadBuffer = file.buffer;
-    let contentType = file.verifiedMime || 'image/jpeg';
-
-    try {
-      uploadBuffer = await sharp(file.buffer)
-        .resize(600, 800, { fit: 'cover', withoutEnlargement: true })
-        .jpeg({ quality: 80, progressive: true })
-        .toBuffer();
-      contentType = 'image/jpeg';
-    } catch {
-      // Fallback to original buffer if sharp fails on unusual formats
-    }
 
     await storage.upload({
       key: objectKey,
-      buffer: uploadBuffer,
-      contentType,
+      buffer: optimized.buffer,
+      contentType: optimized.contentType,
     });
 
     const avatarUrl = `/api/avatars/${filename}`;
